@@ -1,32 +1,32 @@
-# core
+# Core
 
-🛠️ Official TypeScript framework for building OMSS-compliant streaming backends
+This project is a rewrite of the [OMSS Framework](https://github.com/omss-spec/framework) and is being designed from the ground up to be completely modular.
 
-This is a rewrite of https://github.com/omss-spec/framework and will be completely modular. 
+The core framework intentionally contains almost no functionality. Its purpose is to act as a lightweight TypeScript runtime and plugin orchestrator for OMSS-compliant services (OMSS Plugins).
 
-The core framework intentionally contains almost no functionality. It acts as a lightweight TypeScript runtime and plugin orchestrator for OMSS-compliant services.
+Additional functionality—such as HTTP support, caching, ID resolvers ([ongoing discussion](https://github.com/omss-spec/omss-spec/issues/5)), and eventually features like WebSocket support—can be added by registering OMSS plugins with the framework.
 
-Any additional functionalities (like HTTP, caching, data lookup [(id) resolvers {future proofing}](https://github.com/omss-spec/omss-spec/issues/5) and in the future also things like WS etc.) can be added by registering OMSS plugins into this framework. 
+This approach provides maximum flexibility while keeping implementations standardized.
 
-This allows maximal flexibility, while still keeping things standardzied. Until I get this whole thing into a OK shape I will not accept any PR's. To share ideas, please open an issue. 
+Until the project reaches a more stable state, pull requests will not be accepted. If you would like to share ideas, feedback, or suggestions, please open an issue instead.
 
-This will take some time. 
+Development is still in its early stages and will take some time.
 
 ## Naming Conventions
 
-It is important that we use the correct words for what we actually mean, so that we can understand eachother better. Here is a table of a word and it's meaning when talking about it in the OMSS context.
+Using precise terminology is important so that everyone understands the same concepts when discussing OMSS. The table below defines the preferred meanings of commonly used terms within the OMSS ecosystem.
 
-| Word     | Meaning                                                                |
-|----------|------------------------------------------------------------------------|
-| the spec | The current Open Media Streaming Specification (current version: v1.1) |
-| plugin   | Plugins is just a generic term for a piece of software that adds specific features or functionalities to an existing computer program. Please always refer to a specific plugin (or atleast mention it's ecosystem) |
-| OMSS Plugin | A Plugin that adds functionality to the OMSS Framework (see example below) |
-| Resolver | A Resolver in the OMSS Framework is a *kind of Plugin* that can turn a given ID into useable data for providers. Resolvers should be created for a single ID Provider. |
-| ID       | An ID in the OMSS Framework is a unique identifier built of a namespace and a value. [discussion](https://github.com/omss-spec/omss-spec/issues/5). |
-| Namespace | A Namespace in the OMSS Framework is a part of the ID that defines to whom (ID Provider) the value of said ID belongs to. |
-| ID Provider | An ID Provider in the OMSS Framework is a third party service that can provide data for a given ID (e.g. TMDB) |
-| Provider | A Provider in the OMSS Framework is a file, that is home in the consumer repository, that gets called by the OMSS Framework with the data from a Resolver and is responsible for providing streaming sources back. |
-| OMSS Server | The OMSS Server is the main class/component of the OMSS Framework. It is responsible for loading and managing all plugins, resolvers, and providers. |
+| Word            | Meaning                                                                                                                                                                      |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **the spec**    | The current Open Media Streaming Specification (currently v1.1).                                                                                                             |
+| **plugin**      | A generic term for a piece of software that adds features or functionality to an existing program. When possible, refer to the specific plugin or ecosystem being discussed. |
+| **OMSS Plugin** | A plugin that extends the functionality of the OMSS Framework. (see example below)                                                                                                              |
+| **Resolver**    | A type of OMSS Plugin that converts a given ID into usable data for providers. Resolvers should generally be implemented for a single ID-Provider.                           |
+| **ID**          | A unique identifier consisting of a namespace and a value (seperated by `:`). [ongoing discussion](https://github.com/omss-spec/omss-spec/issues/5).                                                                           |
+| **Namespace**   | The portion of an ID that identifies which ID-Provider owns the value.                                                                                                       |
+| **ID-Provider** | A third-party service capable of providing metadata for a given ID (for example, TMDB).                                                                       |
+| **Provider**    | A file within a consumer repository that receives resolver data from the OMSS Framework and is responsible for returning streaming sources.                                  |
+| **OMSS Server** | The primary class/component of the OMSS Framework. It is responsible for loading and managing plugins, resolvers, and providers.                                             |
 
 ## Planned Technical Documentation
 
@@ -67,14 +67,14 @@ export class OMSSServer {
 
 The core framework intentionally contains almost no functionality.
 
-Its sole responsibility is:
+Its responsibilities are limited to:
 
 * Managing the OMSS lifecycle
 * Providing access to framework configuration
 * Registering and orchestrating plugins
 * Exposing shared state and APIs between plugins
 
-Everything else is implemented as plugins.
+Everything else should be implemented as a plugin.
 
 ### Example
 
@@ -104,7 +104,7 @@ await server.register(fsPlugin, {
 
 ### Plugin Architecture
 
-Plugins are executed in registration order.
+Plugins are executed in the order they are registered.
 
 A plugin may:
 
@@ -113,7 +113,7 @@ A plugin may:
 * Register additional services
 * Expose APIs to other plugins
 * Hook into OMSS lifecycle events
-* **Provide information to providers**
+* Provide information to providers
 
 ```ts
 export interface HTTPPluginConfig {
@@ -130,16 +130,16 @@ export default async function httpPlugin(
 
 ### Planned Official Plugins
 
-* `@omss/plugin-http` - Fastify
-* `@omss/plugin-cache` - Memory, Redis
-* `@omss/plugin-tmdb` - To serve tmdb information to Providers
-* `@omss/plugin-v2` - Future OMSS v2 Compatibility
-* `@omss/plugin-auth` - Add basic auth 
+* `@omss/plugin-http` — Fastify integration
+* `@omss/plugin-cache` — Memory and Redis caching
+* `@omss/plugin-tmdb` — Provides TMDB data to providers
+* `@omss/plugin-v2` — Future OMSS v2 compatibility
+* `@omss/plugin-auth` — Basic authentication support
 
-Additional plugins can be developed independently as long as they comply with the OMSS plugin API. In the future there might be a registry of plugins (official and community)
+Additional plugins can be developed independently as long as they comply with the OMSS Plugin API. In the future, an official plugin registry may be introduced for both official and community-maintained plugins.
 
 ### Stability
 
 The API shown above is preliminary and will likely change significantly while the framework is being designed.
 
-No stability guarantees are currently provided until the first public release.
+No stability guarantees are provided until the first public release.
