@@ -16,17 +16,17 @@ Development is still in its early stages and will take some time.
 
 Using precise terminology is important so that everyone understands the same concepts when discussing OMSS. The table below defines the preferred meanings of commonly used terms within the OMSS ecosystem.
 
-| Word            | Meaning                                                                                                                                                                      |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **the spec**    | The current Open Media Streaming Specification (currently v1.1).                                                                                                             |
-| **plugin**      | A generic term for a piece of software that adds features or functionality to an existing program. When possible, refer to the specific plugin or ecosystem being discussed. |
-| **OMSS Plugin** | A plugin that extends the functionality of the OMSS Framework. (see example below)                                                                                                              |
-| **Resolver**    | A type of OMSS Plugin that converts a given ID into usable data for providers. Resolvers should generally be implemented for a single ID-Provider.                           |
-| **ID**          | A unique identifier consisting of a namespace and a value (seperated by `:`). [ongoing discussion](https://github.com/omss-spec/omss-spec/issues/5).                                                                           |
-| **Namespace**   | The portion of an ID that identifies which ID-Provider owns the value.                                                                                                       |
-| **ID-Provider** | A third-party service capable of providing metadata for a given ID (for example, TMDB).                                                                       |
-| **Provider**    | A file within a consumer repository that receives resolver data from the OMSS Framework and is responsible for returning streaming sources.                                  |
-| **OMSS Server** | The primary class/component of the OMSS Framework. It is responsible for loading and managing plugins, resolvers, and providers.                                             |
+| Word            | Meaning                                                                                                                                                                      | Example/Value |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| **the spec**    | The current Open Media Streaming Specification (currently v1.1).                                                                                                             | [OMSS Spec](https://github.com/omss-spec/omss-spec) |
+| **plugin**      | A generic term for a piece of software that adds features or functionality to an existing program. When possible, refer to the specific plugin or ecosystem being discussed. | E.g., OMSS Plugin, Fastify Plugin, Nuvio Plugin etc. |
+| **OMSS Plugin** | A plugin that extends the functionality of the OMSS Framework.                                                                                           |  (see example below) |
+| **Resolver**    | A type of OMSS Plugin that converts a given ID into usable data for providers. Resolvers should generally be implemented for a single ID-Provider. Resolvers will be registered to the resolverService and not the OMSS Server directly.                     |  |
+| **ID**          | A unique identifier consisting of a namespace and a value (seperated by `:`).                         | [Ongoing discussion](https://github.com/omss-spec/omss-spec/issues/5); E.g., `tmdb:12345`, `einthusan:6EHy` |
+| **Namespace**   | The portion of an ID that identifies which ID-Provider owns the value.                                                                                                       | E.g., `tmdb`, `einthusan` |
+| **ID-Provider** | A third-party service capable of providing metadata for a given ID                                                                                      | E.g., [TMDB](https://www.themoviedb.org/), [Einthusan](https://einthusan.tv/) |
+| **Provider**    | A file within a consumer repository that receives resolver data from the OMSS Framework and is responsible for returning streaming sources.                                  | E.g., [Example Provider (old framework)](https://github.com/omss-spec/framework/blob/main/examples/providers/my-provider.ts) |
+| **OMSS Server** | The primary class/component of the OMSS Framework. It is responsible for loading and managing plugins, resolvers, and providers.                                             | (see planned documentation below) |
 
 ## Planned Technical Documentation
 
@@ -47,9 +47,7 @@ export class OMSSServer {
      * @param options - Configuration for the plugin.
      */
     async register<T>(plugin: OMSSPluginType<T>, options: OMSSPluginOptions<T>): Promise<void> {
-        const resolvedOptions = typeof options === 'function'
-            ? (options as (server: OMSSServer) => T)(this)
-            : options
+        const resolvedOptions = typeof options === 'function' ? (options as (server: OMSSServer) => T)(this) : options
 
         await plugin(this, resolvedOptions)
     }
@@ -69,10 +67,10 @@ The core framework intentionally contains almost no functionality.
 
 Its responsibilities are limited to:
 
-* Managing the OMSS lifecycle
-* Providing access to framework configuration
-* Registering and orchestrating plugins
-* Exposing shared state and APIs between plugins
+- Managing the OMSS lifecycle
+- Providing access to framework configuration
+- Registering and orchestrating plugins
+- Exposing shared state and APIs between plugins
 
 Everything else should be implemented as a plugin.
 
@@ -108,33 +106,30 @@ Plugins are executed in the order they are registered.
 
 A plugin may:
 
-* Register routes
-* Extend the server instance
-* Register additional services
-* Expose APIs to other plugins
-* Hook into OMSS lifecycle events
-* Provide information to providers
+- Register routes
+- Extend the server instance
+- Register additional services
+- Expose APIs to other plugins
+- Hook into OMSS lifecycle events
+- Provide information to providers
 
 ```ts
 export interface HTTPPluginConfig {
     port: number
 }
 
-export default async function httpPlugin(
-    server: OMSSServer,
-    config: HTTPPluginConfig
-): Promise<void> {
+export default async function httpPlugin(server: OMSSServer, config: HTTPPluginConfig): Promise<void> {
     // Register HTTP transport
 }
 ```
 
 ### Planned Official Plugins
 
-* `@omss/plugin-http` — Fastify integration
-* `@omss/plugin-cache` — Memory and Redis caching
-* `@omss/plugin-tmdb` — Provides TMDB data to providers
-* `@omss/plugin-v2` — Future OMSS v2 compatibility
-* `@omss/plugin-auth` — Basic authentication support
+- `@omss/plugin-http` — Fastify integration
+- `@omss/plugin-cache` — Memory and Redis caching
+- `@omss/plugin-tmdb` — Provides TMDB data to providers
+- `@omss/plugin-v2` — Future OMSS v2 compatibility
+- `@omss/plugin-auth` — Basic authentication support
 
 Additional plugins can be developed independently as long as they comply with the OMSS Plugin API. In the future, an official plugin registry may be introduced for both official and community-maintained plugins.
 

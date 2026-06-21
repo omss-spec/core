@@ -1,0 +1,46 @@
+{
+    "name": "@omss/core",
+    "version": "0.0.1",
+    "description": "Official lightweight TypeScript runtime and plugin orchestrator to create OMSS backends!",
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsdown",
+        "format": "prettier --write .",
+        "dev": "tsdown --watch",
+        "prepublishOnly": "npm run build"
+    },
+    "keywords": [
+        "omss",
+        "streaming",
+        "plugin",
+        "media"
+    ],
+    "license": "MIT",
+    "publishConfig": {
+        "access": "public"
+    },
+    "devDependencies": {
+        "@types/node": "^22.0.0",
+        "prettier": "^3.8.4",
+        "tsdown": "^0.22.3",
+        "typescript": "^5.8.0"
+    }
+}
