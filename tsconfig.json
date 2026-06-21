@@ -10,10 +10,12 @@
         "declarationMap": true,
         "sourceMap": true,
         "strict": true,
+        "noImplicitAny": true,
         "exactOptionalPropertyTypes": true,
         "noUncheckedIndexedAccess": true,
         "noImplicitOverride": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true
     },
     "include": ["src"]
 }
