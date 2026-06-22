@@ -7,8 +7,8 @@ import type { OMSSConfig, OMSSHooks, OMSSPluginType, OMSSPluginOptions } from '.
  */
 export class OMSSServer {
     readonly #config: OMSSConfig
-    readonly hooks: HookRegistry<OMSSHooks>
-    readonly plugins: PluginRegistry
+    readonly #hooks: HookRegistry<OMSSHooks>
+    readonly #plugins: PluginRegistry
 
     /**
      * Creates a new OMSSServer instance.
@@ -17,10 +17,8 @@ export class OMSSServer {
      */
     constructor(config: OMSSConfig) {
         this.#config = config
-
-        this.hooks = new HookRegistry<OMSSHooks>()
-
-        this.plugins = new PluginRegistry()
+        this.#hooks = new HookRegistry<OMSSHooks>()
+        this.#plugins = new PluginRegistry()
     }
 
     /**
@@ -30,17 +28,32 @@ export class OMSSServer {
      * @param plugin - Plugin implementation
      * @param options - Plugin configuration
      */
-    async register<T>(plugin: OMSSPluginType<T>, options: OMSSPluginOptions<T>): Promise<void> {
-        this.hooks.run('onRegister', {
+    async register<T>(plugin: OMSSPluginType<T>, options?: OMSSPluginOptions<T>): Promise<void> {
+        this.#hooks.run('onRegister', {
             plugin: plugin as OMSSPluginType<unknown>,
             options: options as OMSSPluginOptions<T>,
         })
 
-        await this.plugins.add(this, plugin, options)
+        await this.#plugins.add(this, plugin, options)
+    }
+
+    getPluginState<T>(plugin: OMSSPluginType<T>) {
+        return this.#plugins.getState(plugin);
     }
 
     /**
-     * Returns immutable server configuration.
+     * Add hook to the OMSS Server lifecycle
+     *
+     * @param name - name of the hook you want to listen to
+     * @param cb - callback function that gets run
+     */
+    addHook<K extends keyof OMSSHooks>(name: K, cb: OMSSHooks[K]) {
+        this.#hooks.add(name, cb)
+    }
+
+    /**
+     * Get the OMSS Config from the constructor
+     * @returns the initialised OMSS Config
      */
     getConfig(): OMSSConfig {
         return this.#config

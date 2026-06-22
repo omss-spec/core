@@ -1,15 +1,7 @@
-import type { OMSSPluginType, OMSSPluginOptions, OMSSHooks } from '../../types/index.js'
-
+import type { OMSSPluginType, OMSSPluginOptions } from '../../types/index.js'
 import type { OMSSServer } from '../../core/server.js'
-
-/**
- * Internal type for storing registered plugins.
- * Uses a function signature that erases type parameters to allow storing plugins with different type parameters.
- */
-type StoredPlugin = {
-    plugin: OMSSPluginType<unknown>
-    options: unknown | ((server: OMSSServer) => unknown)
-}
+import type { StoredPlugin } from './types.js'
+import { PluginState } from './types.js'
 
 /**
  * Registry responsible for executing and managing OMSS Plugins.
@@ -18,9 +10,19 @@ type StoredPlugin = {
  */
 export class PluginRegistry {
     /**
-     * Array of registered plugins with their associated options.
+     * Registered plugins and their options.
      */
     readonly #plugins: StoredPlugin[] = []
+
+    /**
+     * Current state of plugins.
+     */
+    readonly #states = new Map<OMSSPluginType<unknown>, PluginState>()
+
+    /**
+     * Registration stack used for circular dependency detection.
+     */
+    readonly #stack: OMSSPluginType<unknown>[] = []
 
     /**
      * Adds and runs a plugin with its options.
@@ -30,17 +32,47 @@ export class PluginRegistry {
      * @param plugin - The plugin function to register.
      * @param options - Plugin options or a factory function that resolves options.
      */
-    async add<T>(instance: OMSSServer, plugin: OMSSPluginType<T>, options: OMSSPluginOptions<T>): Promise<void> {
+    async add<T>(instance: OMSSServer, plugin: OMSSPluginType<T>, options?: OMSSPluginOptions<T>): Promise<void> {
+        const typedPlugin = plugin as OMSSPluginType<unknown>
+
+        const state = this.#states.get(typedPlugin)
+
+        if (state === PluginState.Registering) {
+            const chain = [...this.#stack, typedPlugin].map((p) => p.name || '<anonymous>').join(' -> ')
+
+            throw new Error(`Circular plugin dependency detected: ${chain}`)
+        }
+
+        if (state === PluginState.Registered) {
+            throw new Error(`Plugin "${plugin.name || '<anonymous>'}" is already registered`)
+        }
+
         const resolved = typeof options === 'function' ? (options as (server: OMSSServer) => T)(instance) : options
 
-        await plugin(instance, resolved)
-        this.#plugins.push({ plugin: plugin as OMSSPluginType<unknown>,  options })
+        this.#states.set(typedPlugin, PluginState.Registering)
+        this.#stack.push(typedPlugin)
+
+        try {
+            await plugin(instance, resolved)
+
+            this.#plugins.push({
+                plugin: typedPlugin,
+                options,
+            })
+
+            this.#states.set(typedPlugin, PluginState.Registered)
+        } catch (err) {
+            this.#states.delete(typedPlugin)
+            throw err
+        } finally {
+            this.#stack.pop()
+        }
     }
 
     /**
-     * Returns all registered plugins
+     * Get current plugin state.
      */
-    getAll(): StoredPlugin[] {
-        return this.#plugins
+    getState<T>(plugin: OMSSPluginType<T>): PluginState {
+        return this.#states.get(plugin as OMSSPluginType<unknown>) ?? PluginState.Unavailable
     }
 }
