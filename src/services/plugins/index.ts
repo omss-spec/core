@@ -38,13 +38,13 @@ export class PluginRegistry {
         const state = this.#states.get(typedPlugin)
 
         if (state === PluginState.Registering) {
-            const chain = [...this.#stack, typedPlugin].map((p) => p.name || '<anonymous>').join(' -> ')
+            const chain = [...this.#stack, typedPlugin].map((p) => p.name).join(' -> ')
 
             throw new Error(`Circular plugin dependency detected: ${chain}`)
         }
 
         if (state === PluginState.Registered) {
-            throw new Error(`Plugin "${plugin.name || '<anonymous>'}" is already registered`)
+            throw new Error(`Plugin "${plugin.name}" is already registered`)
         }
 
         const resolved = typeof options === 'function' ? (options as (server: OMSSServer) => T)(instance) : options

@@ -37,6 +37,11 @@ export class OMSSServer {
         await this.#plugins.add(this, plugin, options)
     }
 
+    /**
+     * Get the current State of a plugin
+     * @param plugin - the plugin to get the state from
+     * @returns - an Enum of PluginState
+     */
     getPluginState<T>(plugin: OMSSPluginType<T>) {
         return this.#plugins.getState(plugin);
     }

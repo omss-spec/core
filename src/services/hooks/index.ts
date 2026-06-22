@@ -20,7 +20,6 @@ export class HookRegistry<THooks extends Record<string, unknown>> {
     add<K extends keyof THooks>(name: K, fn: THooks[K]): void {
         const existing = this.hooks.get(name) ?? []
 
-        // safe because Map preserves exact key association
         this.hooks.set(name, [...existing, fn])
     }
 
@@ -35,7 +34,6 @@ export class HookRegistry<THooks extends Record<string, unknown>> {
         const fns = this.hooks.get(name) ?? []
 
         for (const fn of fns) {
-            // Type-safe because we register handlers with the exact signature
             await (fn as (payload: unknown) => void | Promise<void>)(payload)
         }
     }

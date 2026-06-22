@@ -25,6 +25,9 @@
         "build": "tsdown",
         "format": "prettier --write .",
         "dev": "tsdown --watch",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
         "prepublishOnly": "npm run build"
     },
     "keywords": [
@@ -39,8 +42,10 @@
     },
     "devDependencies": {
         "@types/node": "^22.0.0",
+        "@vitest/coverage-v8": "^4.1.9",
         "prettier": "^3.8.4",
         "tsdown": "^0.22.3",
-        "typescript": "^5.8.0"
+        "typescript": "^5.8.0",
+        "vitest": "^4.1.9"
     }
 }
