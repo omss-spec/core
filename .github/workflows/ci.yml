@@ -10,7 +10,6 @@ on:
       - dev
   workflow_dispatch:
 
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -43,4 +42,7 @@ jobs:
 
       - name: Run unit tests with coverage
         run: npm run test:coverage
+
+      - name: Run integration tests
+        run: npm run test:integration
 
