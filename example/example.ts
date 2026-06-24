@@ -1,25 +1,13 @@
-import {OMSSServer} from '../src'
-import { PluginState } from '../src/services/plugins/types'
+import { OMSSServer } from '../src/index.js'
 
-interface httpExampleConfig {
-    port: number
+const httpPlugin = async (instance: OMSSServer) => {
+    console.log('HTTP plugin registered')
 }
 
-const opt = {
-    port: 67
-}
+const server = new OMSSServer({ name: 'Local testing server' })
 
-const httpPlugin = async (instance: OMSSServer, config?: httpExampleConfig) => {
-    console.log('ohh yeah http plugin is live')
-}
+server.hooks.add('onRegister', (payload) => {
+    console.log(`Registering plugin: ${payload.plugin.name}`)
+})
 
-const secondPlugins = async (instance: OMSSServer, config?: httpExampleConfig) => {
-    if (instance.getPluginState(httpPlugin) === PluginState.Unavailable) {
-        throw new Error("http required")
-    }
-}
-
-const server = new OMSSServer({name: "Local testing server"})
-
-// server.register(httpPlugin)
-server.register(secondPlugins)
+await server.plugins.register(httpPlugin)

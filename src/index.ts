@@ -7,7 +7,11 @@
  * - Resolver management
  * - Provider registration
  *
- * @packageDocumentation
+ * Copyright (c) 2026 Open Media Streaming Foundation
+ * Licensed under the MIT License.
+ * SPDX-License-Identifier: MIT
+ * More information: https://github.com/omss-spec/core
+ *
+ *  @packageDocumentation
  */
-export { OMSSServer } from './core/server.js'
-export type * from './types/index.js'
+export * from './public-api.js'

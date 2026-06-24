@@ -84,19 +84,19 @@ import cachePlugin from '@omss/plugin-cache'
 import resolverPlugin from '@omss/plugin-resolver'
 
 const server = new OMSSServer({
-    name: 'My Digitalized Movie Collection'
+    name: 'My Digitalized Movie Collection',
 })
 
-await server.register(httpPlugin, {
-    port: 3000
+await server.plugins.register(httpPlugin, {
+    port: 3000,
 })
 
-await server.register(cachePlugin, {
-    ttl: 300
+await server.plugins.register(cachePlugin, {
+    ttl: 300,
 })
 
-await server.register(fsPlugin, {
-    path: path.join('\\nas.home\medialib\')
+await server.plugins.register(fsPlugin, {
+    path: path.join('\\nas.home\\medialib\\'),
 })
 ```
 

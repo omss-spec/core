@@ -1,27 +1,17 @@
+import { OMSSHooks } from '@/types/hooks.js'
+
 /**
  * Hook Registry
  *
  * Manages lifecycle hooks for strongly-typed events.
  * @typeParam THooks - A record of hook names to their handler functions.
  */
-export class HookRegistry<THooks extends Record<string, unknown>> {
+export class HookRegistry {
     /**
      * Map storing arrays of hook handlers for each hook name.
+     * @internal
      */
-    private hooks = new Map<keyof THooks, unknown[]>()
-
-    /**
-     * Register a hook for a lifecycle event.
-     *
-     * @typeParam K - The name of the hook to register.
-     * @param name - The hook name (key of THooks).
-     * @param fn - The handler function for this hook.
-     */
-    add<K extends keyof THooks>(name: K, fn: THooks[K]): void {
-        const existing = this.hooks.get(name) ?? []
-
-        this.hooks.set(name, [...existing, fn])
-    }
+    readonly hooks = new Map<keyof OMSSHooks, unknown[]>()
 
     /**
      * Run all hooks for a lifecycle event with the provided payload.
@@ -29,8 +19,9 @@ export class HookRegistry<THooks extends Record<string, unknown>> {
      * @typeParam K - The name of the hook to run.
      * @param name - The hook name (key of THooks).
      * @param payload - The payload to pass to each hook handler.
+     * @internal
      */
-    async run<K extends keyof THooks>(name: K, payload: THooks[K] extends (payload: infer P) => any ? P : never): Promise<void> {
+    async run<K extends keyof OMSSHooks>(name: K, payload: OMSSHooks[K] extends (payload: infer P) => any ? P : never): Promise<void> {
         const fns = this.hooks.get(name) ?? []
 
         for (const fn of fns) {

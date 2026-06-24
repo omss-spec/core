@@ -6,11 +6,16 @@
         "lib": ["ES2022"],
         "outDir": "dist",
         "rootDir": "src",
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"]
+        },
         "declaration": true,
         "declarationMap": true,
         "sourceMap": true,
         "strict": true,
         "noImplicitAny": true,
+        "stripInternal": true,
         "exactOptionalPropertyTypes": true,
         "noUncheckedIndexedAccess": true,
         "noImplicitOverride": true,
