@@ -42,11 +42,11 @@ export class PluginService {
         }
 
         this.#insideOnRegister = true
-        await this.#hookRegistry.run('onRegister', {
-            plugin: plugin as UnknownPluginType,
-            options,
-        })
-        this.#insideOnRegister = false
+        try {
+            await this.#hookRegistry.run('onRegister', { plugin: plugin as UnknownPluginType, options })
+        } finally {
+            this.#insideOnRegister = false
+        }
 
         await this.#pluginRegistry.add(this.#omssServer, plugin, options)
     }
