@@ -1,5 +1,5 @@
 import { HookRegistry } from '@/services/hooks/HookRegistry.js'
-import { OMSSHooks } from '@/types/hooks.js'
+import type { OMSSHooks } from '@/types/hooks.js'
 
 export class HookService {
     readonly #hookRegistry: HookRegistry

@@ -35,10 +35,10 @@ describe('HookService', () => {
         it('registers handlers for different hooks independently', () => {
             const { registry, service } = setup()
             service.add('onError', vi.fn() as any)
-            service.add('onRegister', vi.fn() as any)
+            service.add('onPluginRegister', vi.fn() as any)
 
             expect(registry.hooks.get('onError')).toHaveLength(1)
-            expect(registry.hooks.get('onRegister')).toHaveLength(1)
+            expect(registry.hooks.get('onPluginRegister')).toHaveLength(1)
         })
 
         it('the registered handler is invoked when the hook runs', async () => {

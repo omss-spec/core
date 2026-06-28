@@ -9,7 +9,7 @@ describe('Hook Lifecycle Integration', () => {
 
     it('async hooks are fully awaited before the plugin body runs', async () => {
         const timeline: string[] = []
-        server.hooks.add('onRegister', async () => {
+        server.hooks.add('onPluginRegister', async () => {
             await new Promise((r) => setTimeout(r, 20))
             timeline.push('hook-done')
         })
@@ -19,15 +19,15 @@ describe('Hook Lifecycle Integration', () => {
         expect(timeline).toEqual(['hook-done', 'plugin-body'])
     })
 
-    it('multiple onRegister hooks fire in registration order', async () => {
+    it('multiple onPluginRegister hooks fire in registration order', async () => {
         const calls: string[] = []
-        server.hooks.add('onRegister', async () => {
+        server.hooks.add('onPluginRegister', async () => {
             calls.push('A')
         })
-        server.hooks.add('onRegister', async () => {
+        server.hooks.add('onPluginRegister', async () => {
             calls.push('B')
         })
-        server.hooks.add('onRegister', async () => {
+        server.hooks.add('onPluginRegister', async () => {
             calls.push('C')
         })
         await server.plugins.register(async () => {})
@@ -37,7 +37,7 @@ describe('Hook Lifecycle Integration', () => {
     it('hooks on separate server instances are isolated', async () => {
         const s2 = new OMSSServer({ name: 'isolated' })
         const spy = vi.fn()
-        s2.hooks.add('onRegister', spy as any)
+        s2.hooks.add('onPluginRegister', spy as any)
 
         await server.plugins.register(async () => {})
 
@@ -46,7 +46,7 @@ describe('Hook Lifecycle Integration', () => {
 
     it('hook receives options passed to register()', async () => {
         let opts: unknown
-        server.hooks.add('onRegister', async (p) => {
+        server.hooks.add('onPluginRegister', async (p) => {
             opts = p.options
         })
         await server.plugins.register(async () => {}, { foo: 'bar' })
@@ -56,7 +56,7 @@ describe('Hook Lifecycle Integration', () => {
     it('adding a hook after registration does not affect previous registrations', async () => {
         const spy = vi.fn()
         await server.plugins.register(vi.fn(async () => {}))
-        server.hooks.add('onRegister', spy as any)
+        server.hooks.add('onPluginRegister', spy as any)
         expect(spy).not.toHaveBeenCalled()
     })
 })

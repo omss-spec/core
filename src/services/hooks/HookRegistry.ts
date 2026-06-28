@@ -1,4 +1,4 @@
-import { OMSSHooks } from '@/types/hooks.js'
+import type { OMSSHooks } from '@/types/hooks.js'
 
 /**
  * Hook Registry

@@ -42,9 +42,9 @@ describe('Plugin Lifecycle Integration', () => {
         expect(p).toHaveBeenCalledOnce()
     })
 
-    it('fires onRegister before the plugin body', async () => {
+    it('fires onPluginRegister before the plugin body', async () => {
         const order: string[] = []
-        server.hooks.add('onRegister', async () => {
+        server.hooks.add('onPluginRegister', async () => {
             order.push('hook')
         })
         await server.plugins.register(async () => {
@@ -55,7 +55,7 @@ describe('Plugin Lifecycle Integration', () => {
 
     it('hook receives correct plugin reference and options', async () => {
         let captured: unknown
-        server.hooks.add('onRegister', async (p) => {
+        server.hooks.add('onPluginRegister', async (p) => {
             captured = p
         })
         const plugin = vi.fn(async () => {})
@@ -64,12 +64,12 @@ describe('Plugin Lifecycle Integration', () => {
         expect((captured as any).options).toStrictEqual({ tag: 'hi' })
     })
 
-    it('multiple onRegister hooks all execute in registration order', async () => {
+    it('multiple onPluginRegister hooks all execute in registration order', async () => {
         const calls: number[] = []
-        server.hooks.add('onRegister', async () => {
+        server.hooks.add('onPluginRegister', async () => {
             calls.push(1)
         })
-        server.hooks.add('onRegister', async () => {
+        server.hooks.add('onPluginRegister', async () => {
             calls.push(2)
         })
         await server.plugins.register(vi.fn(async () => {}))
@@ -101,12 +101,12 @@ describe('Plugin Lifecycle Integration', () => {
         await expect(server.plugins.register(p)).rejects.toThrow('already registered')
     })
 
-    it('prevents registration inside onRegister', async () => {
+    it('prevents registration inside onPluginRegister', async () => {
         const inner = vi.fn(async () => {})
-        server.hooks.add('onRegister', async () => {
+        server.hooks.add('onPluginRegister', async () => {
             await server.plugins.register(inner)
         })
-        await expect(server.plugins.register(vi.fn(async () => {}))).rejects.toThrow('Plugins cannot be registered during onRegister')
+        await expect(server.plugins.register(vi.fn(async () => {}))).rejects.toThrow('Plugins cannot be registered during onPluginRegister')
     })
 
     it('throws on circular self-referencing plugin', async () => {

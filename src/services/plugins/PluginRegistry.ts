@@ -1,4 +1,4 @@
-import { OMSSConfiguredPluginType, OMSSPluginOptions, OMSSPluginType, StoredPlugin, UnknownPluginType } from '@/types/plugin.js'
+import type { OMSSConfiguredPluginType, OMSSPluginOptions, OMSSPluginType, StoredPlugin, UnknownPluginType } from '@/types/plugin.js'
 import OMSSServer from '@/core/server.js'
 import { PluginState } from '@/services/plugins/public-api.js'
 

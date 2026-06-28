@@ -62,14 +62,14 @@ describe('HookRegistry', () => {
             expect(resolved).toEqual(['h1', 'h2'])
         })
 
-        it('handles the onRegister hook payload correctly', async () => {
+        it('handles the onPluginRegister hook payload correctly', async () => {
             const registry = new HookRegistry()
             const handler = vi.fn()
-            registry.hooks.set('onRegister', [handler])
+            registry.hooks.set('onPluginRegister', [handler])
 
             const plugin = async () => {}
             const payload = { plugin, options: undefined }
-            await registry.run('onRegister', payload)
+            await registry.run('onPluginRegister', payload)
 
             expect(handler).toHaveBeenCalledWith(payload)
         })

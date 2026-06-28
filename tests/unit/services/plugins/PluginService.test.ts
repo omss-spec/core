@@ -15,10 +15,10 @@ function setup() {
 
 describe('PluginService', () => {
     describe('register()', () => {
-        it('fires onRegister hook before executing the plugin body', async () => {
+        it('fires onPluginRegister hook before executing the plugin body', async () => {
             const { hookRegistry, service } = setup()
             const order: string[] = []
-            hookRegistry.hooks.set('onRegister', [
+            hookRegistry.hooks.set('onPluginRegister', [
                 vi.fn(() => {
                     order.push('hook')
                 }),
@@ -32,10 +32,10 @@ describe('PluginService', () => {
             expect(order).toEqual(['hook', 'plugin'])
         })
 
-        it('passes plugin and options into the onRegister payload', async () => {
+        it('passes plugin and options into the onPluginRegister payload', async () => {
             const { hookRegistry, service } = setup()
             let payload: unknown
-            hookRegistry.hooks.set('onRegister', [
+            hookRegistry.hooks.set('onPluginRegister', [
                 vi.fn((p) => {
                     payload = p
                 }),
@@ -64,22 +64,22 @@ describe('PluginService', () => {
             expect(plugin).toHaveBeenCalledOnce()
         })
 
-        it('throws when register() is called from inside an onRegister hook', async () => {
+        it('throws when register() is called from inside an onPluginRegister hook', async () => {
             const { hookRegistry, service } = setup()
             const inner = vi.fn(async () => {})
-            hookRegistry.hooks.set('onRegister', [
+            hookRegistry.hooks.set('onPluginRegister', [
                 vi.fn(async () => {
                     await service.register(inner)
                 }),
             ])
 
-            expect(service.register(vi.fn(async () => {}))).rejects.toThrow('Plugins cannot be registered during onRegister')
+            expect(service.register(vi.fn(async () => {}))).rejects.toThrow('Plugins cannot be registered during onPluginRegister')
         })
 
         it('resets the re-entrancy guard after a hook throws', async () => {
             const { hookRegistry, service } = setup()
 
-            hookRegistry.hooks.set('onRegister', [
+            hookRegistry.hooks.set('onPluginRegister', [
                 vi.fn(() => {
                     throw new Error('hook error')
                 }),
@@ -89,13 +89,13 @@ describe('PluginService', () => {
 
             const inner = vi.fn(async () => {})
 
-            hookRegistry.hooks.set('onRegister', [
+            hookRegistry.hooks.set('onPluginRegister', [
                 vi.fn(async () => {
                     await service.register(inner)
                 }),
             ])
 
-            expect(service.register(vi.fn(async () => {}))).rejects.toThrow('Plugins cannot be registered during onRegister')
+            expect(service.register(vi.fn(async () => {}))).rejects.toThrow('Plugins cannot be registered during onPluginRegister')
         })
     })
 

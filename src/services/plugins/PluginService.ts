@@ -10,7 +10,7 @@ export class PluginService {
     readonly #pluginRegistry: PluginRegistry
     readonly #hookRegistry: HookRegistry
     readonly #omssServer: OMSSServer
-    #insideOnRegister = false
+    #insideOnPluginRegister = false
 
     constructor(omssServer: OMSSServer, pluginRegistry: PluginRegistry, hookRegistry: HookRegistry) {
         this.#omssServer = omssServer
@@ -37,15 +37,15 @@ export class PluginService {
      * @param options - Plugin configuration
      */
     async register(plugin: UnknownPluginType, options?: unknown): Promise<void> {
-        if (this.#insideOnRegister) {
-            throw new Error('Plugins cannot be registered during onRegister')
+        if (this.#insideOnPluginRegister) {
+            throw new Error('Plugins cannot be registered during onPluginRegister')
         }
 
-        this.#insideOnRegister = true
+        this.#insideOnPluginRegister = true
         try {
-            await this.#hookRegistry.run('onRegister', { plugin: plugin as UnknownPluginType, options })
+            await this.#hookRegistry.run('onPluginRegister', { plugin: plugin as UnknownPluginType, options })
         } finally {
-            this.#insideOnRegister = false
+            this.#insideOnPluginRegister = false
         }
 
         await this.#pluginRegistry.add(this.#omssServer, plugin, options)
