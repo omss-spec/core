@@ -3,8 +3,6 @@ import { HookService } from '@/services/hooks/HookService.js'
 import { PluginRegistry } from '@/services/plugins/PluginRegistry.js'
 import type { OMSSConfig } from '@/types/config.js'
 import { PluginService } from '@/services/plugins/PluginService.js'
-import { ResolverRegistry } from '@/services/resolvers/ResolverRegistry.js'
-import { ResolverService } from '@/services/resolvers/ResolverService.js'
 
 /**
  * Core server class for OMSS.
@@ -12,7 +10,6 @@ import { ResolverService } from '@/services/resolvers/ResolverService.js'
 export class OMSSServer {
     readonly hooks: HookService
     readonly plugins: PluginService
-    readonly resolvers: ResolverService
     readonly #config: OMSSConfig
 
     /**
@@ -25,11 +22,9 @@ export class OMSSServer {
 
         const hooksRegistry = new HookRegistry()
         const pluginRegistry = new PluginRegistry()
-        const resolverRegistry = new ResolverRegistry()
 
         this.hooks = new HookService(hooksRegistry)
         this.plugins = new PluginService(this, pluginRegistry, hooksRegistry)
-        this.resolvers = new ResolverService(resolverRegistry, hooksRegistry)
     }
 
     /**

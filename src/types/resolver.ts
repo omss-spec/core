@@ -1,4 +1,6 @@
 import type OMSSServer from '@/core/server.js'
+import { OMSSResolverError } from '@/utils/error.js'
+import { Result } from '@/types/utils.js'
 
 /**
  * Canonical OMSS ID representation.
@@ -11,31 +13,38 @@ export type OMSSId = string
  * Parsed representation of an OMSS ID.
  */
 export interface ParsedOMSSId {
-    /** The ID namespace, e.g. "tmdb", "einthusan". */
+    /**
+     * The ID namespace
+     */
     namespace: string
-    /** The opaque provider-owned value, e.g. "12345". */
+    /**
+     * The opaque provider-owned value
+     */
     value: string
-    /** The original raw ID string, e.g. "tmdb:12345". */
+    /**
+     * The original raw ID string
+     */
     raw: OMSSId
 }
 
 /**
- * Context passed into resolvers when executing them.[cite:51]
+ * Context passed into resolvers when executing them.
  */
 export interface ResolverExecutionContext {
-    /** OMSS server instance – gives access to plugins, config, etc. */
+    /**
+     * OMSS server instance – gives access to plugins, config, etc.
+     */
     server: OMSSServer
-    /** Abort signal for cancellation. */
+    /**
+     * Abort signal for cancellation.
+     */
     signal: AbortSignal
 }
 
 /**
  * Result returned by a resolver – metadata for providers.
  */
-export interface OMSSResolverResult<TMetadata = unknown> {
-    /** Resolver-specific metadata that providers consume. */
-    metadata: TMetadata
-}
+export type ResolverResult<T> = Result<T, OMSSResolverError>
 
 /**
  * Base interface for all OMSS resolvers.
@@ -59,10 +68,5 @@ export interface OMSSResolver<TMetadata = unknown> {
      * @param id - Parsed OMSS ID
      * @param ctx - Execution context.
      */
-    resolve(id: ParsedOMSSId, ctx: ResolverExecutionContext): Promise<OMSSResolverResult<TMetadata>>
+    resolve(id: ParsedOMSSId, ctx: ResolverExecutionContext): Promise<ResolverResult<TMetadata>>
 }
-
-/**
- * Convenience alias for any resolver instance.
- */
-export type UnknownResolverType = OMSSResolver

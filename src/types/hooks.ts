@@ -1,5 +1,4 @@
 import type { OMSSPluginOptions, UnknownPluginType } from '@/types/plugin.js'
-import type {UnknownResolverType} from '@/types/resolver.js'
 
 /**
  * Hook map for OMSS lifecycle events.
@@ -8,7 +7,6 @@ import type {UnknownResolverType} from '@/types/resolver.js'
 export type OMSSHooks = {
     onPluginRegister: <T>(payload: { plugin: UnknownPluginType; options: OMSSPluginOptions<T> }) => void | Promise<void>
 
-    onResolverRegister: <T>(payload: { resolver: UnknownResolverType }) => void | Promise<void>
-
+    // TODO: Needs some global error handling
     onError: (payload: { error: Error }) => void | Promise<void>
 }

@@ -12,7 +12,6 @@ export * from '@/services/resolvers/public-api.js'
 /**
  * Export types.
  */
-/// TS Types
 export type * from '@/types/config.js'
 export type * from '@/types/plugin.js'
 export type * from '@/types/hooks.js'
