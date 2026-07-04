@@ -27,9 +27,6 @@
         "dev": "tsdown --watch",
         "example": "tsx example/example.ts",
         "test": "vitest run",
-        "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage",
-        "test:integration": "vitest run integration",
         "prepublishOnly": "npm run build"
     },
     "keywords": [

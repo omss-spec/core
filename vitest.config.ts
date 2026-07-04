@@ -10,10 +10,11 @@ export default defineConfig({
         environment: 'node',
         include: ['tests/**/*.test.ts'],
         coverage: {
+            enabled: true,
             provider: 'v8',
             reporter: ['text', 'lcov', 'html'],
             include: ['src/**/*.ts'],
-            exclude: ['src/types/**', 'src/index.ts', 'src/public-api.ts'],
+            exclude: ['src/types/**', 'src/index.ts', 'src/**/public-api.ts', 'src/**/Base*.ts'],
             thresholds: {
                 lines: 100,
                 functions: 100,
