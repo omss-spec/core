@@ -18,6 +18,7 @@ export default defineConfig({
             enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
             bundleName: '@omss/core',
             uploadToken: process.env.CODECOV_TOKEN ?? '<upload token>',
+            gitService: 'github',
         }),
     ],
 })
