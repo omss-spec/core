@@ -1,6 +1,10 @@
 import type { OMSSId, ParsedOMSSId } from '@/types/resolver.js'
+import { OMSSResolverError } from '@/utils/error.js'
 
-export const NAMESPACE_REGEX = /^[A-Za-z0-9-]+$/
+/**
+ * Regex for validating namespace names.
+ */
+export const NAMESPACE_REGEX = /^[a-z0-9-]+$/
 
 /**
  * Parses an OMSS ID in the form `namespace:value`.
@@ -11,18 +15,18 @@ export function parseOMSSId(id: OMSSId): ParsedOMSSId {
     const idx = id.indexOf(':')
 
     if (idx === -1) {
-        throw new Error(`Invalid OMSS ID "${id}": missing namespace separator ":"`)
+        throw new OMSSResolverError(`Invalid OMSS ID "${id}": missing namespace separator ":"`)
     }
 
     const namespace = id.slice(0, idx)
     const value = id.slice(idx + 1)
 
     if (!NAMESPACE_REGEX.test(namespace)) {
-        throw new Error(`Invalid OMSS namespace "${namespace}". Expected only letters, numbers, and hyphens.`)
+        throw new OMSSResolverError(`Invalid OMSS namespace "${namespace}". Expected only letters (lowercase), numbers, and hyphens.`)
     }
 
     if (value.length === 0) {
-        throw new Error(`Invalid OMSS ID "${id}": value cannot be empty`)
+        throw new OMSSResolverError(`Invalid OMSS ID "${id}": value cannot be empty`)
     }
 
     return {

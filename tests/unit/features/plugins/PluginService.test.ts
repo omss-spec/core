@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { PluginService } from '@/services/plugins/PluginService.js'
-import { PluginRegistry } from '@/services/plugins/PluginRegistry.js'
-import { HookRegistry } from '@/services/hooks/HookRegistry.js'
-import { PluginState } from '@/services/plugins/public-api.js'
+import { PluginService } from '@/features/plugins/PluginService.js'
+import { PluginRegistry } from '@/features/plugins/PluginRegistry.js'
+import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { PluginState } from '@/features/plugins/public-api.js'
 import OMSSServer from '@/core/server.js'
 
 function setup() {

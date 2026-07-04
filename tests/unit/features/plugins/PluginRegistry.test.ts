@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { PluginRegistry } from '@/services/plugins/PluginRegistry.js'
-import { PluginState } from '@/services/plugins/public-api.js'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { PluginRegistry } from '@/features/plugins/PluginRegistry.js'
+import { PluginState } from '@/features/plugins/public-api.js'
 import OMSSServer from '@/core/server.js'
 
 function makeServer(): OMSSServer {

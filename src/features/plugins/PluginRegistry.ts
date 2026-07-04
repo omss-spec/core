@@ -1,6 +1,7 @@
 import type { OMSSConfiguredPluginType, OMSSPluginOptions, OMSSPluginType, StoredPlugin, UnknownPluginType } from '@/types/plugin.js'
 import OMSSServer from '@/core/server.js'
-import { PluginState } from '@/services/plugins/public-api.js'
+
+import { PluginState } from '@/features/plugins/plugin-state.js'
 
 /**
  * Registry responsible for executing and managing OMSS Plugins.

@@ -18,7 +18,7 @@ export interface ParsedOMSSId {
      */
     namespace: string
     /**
-     * The opaque provider-owned value
+     * The ID-provider-owned value
      */
     value: string
     /**
@@ -51,7 +51,7 @@ export type ResolverResult<T> = Result<T, OMSSResolverError>
  *
  * Resolvers convert an OMSS ID into usable metadata for providers.
  */
-export interface OMSSResolver<TMetadata = unknown> {
+export interface OMSSResolver<TMetadata> {
     /**
      * Namespace this resolver owns, e.g. "tmdb".
      */

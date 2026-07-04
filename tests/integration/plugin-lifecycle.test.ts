@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import OMSSServer from '@/core/server.js'
-import { PluginState } from '@/services/plugins/public-api.js'
+import { PluginState } from '@/features/plugins/public-api.js'
 
 function makeServer(name = 'integration') {
     return new OMSSServer({ name })

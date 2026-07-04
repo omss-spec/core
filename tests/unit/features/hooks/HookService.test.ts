@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
-import { HookRegistry } from '@/services/hooks/HookRegistry.js'
-import { HookService } from '@/services/hooks/HookService.js'
+import { describe, expect, it, vi } from 'vitest'
+import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { HookService } from '@/features/hooks/HookService.js'
 
 describe('HookService', () => {
     function setup() {

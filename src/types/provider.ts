@@ -1,9 +1,10 @@
 import type { ParsedOMSSId, ResolverResult } from '@/types/resolver.js'
-import type { BaseResolver } from '@/services/resolvers/BaseResolver.js'
+import type { BaseResolver } from '@/features/resolvers/BaseResolver.js'
 import type { OMSSProviderError } from '@/utils/error.js'
 import { Result } from '@/types/utils.js'
+import { OK } from '@/utils/utils.js'
 
-export interface OMSSProvider<Rs extends readonly BaseResolver<unknown>[]> {
+export interface OMSSProvider<K, P extends BaseResolver<K>> {
     /**
      * Provider ID. Must be unique.
      */
@@ -30,35 +31,34 @@ export interface OMSSProvider<Rs extends readonly BaseResolver<unknown>[]> {
     readonly headers: Record<string, string>
 
     /**
-     * Resolvers that this provider supports.
+     * Resolver that this provider supports.
      */
-    readonly resolvers: Rs
+    readonly resolver: P
 
     /**
      * Fetch sources for a certain media.
      */
-    getSources(media: ProviderSourcesMeta<ResolverMetadataUnion<Rs>>): Promise<ProviderResult>
+    getSources(media: ProviderSourcesMeta<ResolverMetadata<P>>): Promise<ProviderResult>
 }
 
 /**
- * Extract the metadata type from a resolver's resolve method.'
+ * Extract the metadata type from a resolver's resolve method.
  */
-type ResolverMetadata<R extends BaseResolver<unknown>> = Awaited<ReturnType<R['resolve']>> extends ResolverResult<infer T> ? T : never
-
-/**
- * Extract the metadata type from a union of resolvers.
- */
-type ResolverMetadataUnion<Rs extends readonly BaseResolver<unknown>[]> = ResolverMetadata<Rs[number]>
+export type ResolverMetadata<R extends BaseResolver<unknown>> = Awaited<ReturnType<R['resolve']>> extends ResolverResult<typeof OK<infer T>> ? T : never
 
 /**
  * Convenience alias for any provider instance.
  */
-export type UnknownProvider = OMSSProvider<readonly BaseResolver<unknown>[]>
+export type UnknownProvider = OMSSProvider<BaseResolver<unknown>>
 
 /**
  * The object passed to providers when they are executed.
  */
-export type ProviderSourcesMeta<T> = ResolverResult<T> & ParsedOMSSId
+export type ProviderSourcesMeta<T> = {
+    omssId: ParsedOMSSId
+    /// Metadata returned by the resolver
+    meta: T
+}
 
 /**
  * The result of a provider getSources call.
@@ -69,5 +69,6 @@ export type ProviderResult = Result<OMSSProviderResults, OMSSProviderError>
  * The result of a provider getSources call if successful.
  */
 export interface OMSSProviderResults {
+    // TODO: define schema.
     sources: string[]
 }

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { PluginState } from '@/services/plugins/public-api.js'
+import { describe, expect, it } from 'vitest'
+import { PluginState } from '@/features/plugins/public-api.js'
 
 describe('PluginState (enum)', () => {
     it('has the Registering member', () => {

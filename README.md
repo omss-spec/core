@@ -1,5 +1,7 @@
 # Core
 
+![Codecov](https://img.shields.io/codecov/c/github/omss-spec/core)
+
 This project is a rewrite of the [OMSS Framework](https://github.com/omss-spec/framework) and is being designed from the ground up to be completely modular.
 
 The core framework intentionally contains almost no functionality. Its purpose is to act as a lightweight TypeScript runtime and plugin orchestrator for OMSS-compliant services (OMSS Plugins).

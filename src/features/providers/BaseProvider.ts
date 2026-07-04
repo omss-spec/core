@@ -1,10 +1,10 @@
-import type { BaseResolver } from '@/services/resolvers/BaseResolver.js'
-import type { OMSSProvider, ProviderResult, ProviderSourcesMeta } from '@/types/provider.js'
+import type { BaseResolver } from '@/features/resolvers/BaseResolver.js'
+import { OMSSProvider, ProviderResult, ProviderSourcesMeta } from '@/types/provider.js'
 
 /**
  * Base class for all providers.
  */
-export abstract class BaseProvider<T> implements OMSSProvider<BaseResolver<unknown>[]> {
+export abstract class BaseProvider<T, K> implements OMSSProvider<BaseResolver<T>> {
     /**
      * Provider ID. Must be unique.
      */
@@ -28,11 +28,11 @@ export abstract class BaseProvider<T> implements OMSSProvider<BaseResolver<unkno
     /**
      * Resolvers that this provider supports.
      */
-    abstract readonly resolvers: BaseResolver<T>[]
+    abstract readonly resolver: BaseResolver<T>
 
     /**
      * Fetch sources for a certain media.
      * @param media - Metadata for a single media item. The type of this object depends on the resolvers in the resolvers array. Note that if several resolvers match the namespace, the first one will be used.
      */
-    abstract getSources(media: ProviderSourcesMeta<T>): Promise<ProviderResult>
+    abstract getSources<T>(media: ProviderSourcesMeta<T>): Promise<ProviderResult>
 }

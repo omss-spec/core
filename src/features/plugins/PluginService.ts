@@ -1,5 +1,5 @@
-import { PluginRegistry } from '@/services/plugins/PluginRegistry.js'
-import { HookRegistry } from '@/services/hooks/HookRegistry.js'
+import { PluginRegistry } from '@/features/plugins/PluginRegistry.js'
+import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import type { OMSSConfiguredPluginType, OMSSPluginOptions, OMSSPluginType, UnknownPluginType } from '@/types/plugin.js'
 import OMSSServer from '@/core/server.js'
 

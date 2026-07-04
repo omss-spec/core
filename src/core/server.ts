@@ -1,8 +1,9 @@
-import { HookRegistry } from '@/services/hooks/HookRegistry.js'
-import { HookService } from '@/services/hooks/HookService.js'
-import { PluginRegistry } from '@/services/plugins/PluginRegistry.js'
+import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { HookService } from '@/features/hooks/HookService.js'
+import { PluginRegistry } from '@/features/plugins/PluginRegistry.js'
+import { PluginService } from '@/features/plugins/PluginService.js'
+import { OMSSServerError } from '@/utils/error.js'
 import type { OMSSConfig } from '@/types/config.js'
-import { PluginService } from '@/services/plugins/PluginService.js'
 
 /**
  * Core server class for OMSS.
@@ -43,12 +44,16 @@ export class OMSSServer {
      */
     decorate<T>(name: string, value: T, deps: string[] = []): void {
         if (Object.hasOwn(this, name)) {
-            throw new Error(`Decorator "${name}" already exists`)
+            throw new OMSSServerError(`Decorator "${name}" already exists`, {
+                cause: {
+                    existing: this[name as keyof this],
+                },
+            })
         }
 
         for (const dep of deps) {
             if (!this.hasDecorator(dep)) {
-                throw new Error(`"${name}" depends on "${dep}"`)
+                throw new OMSSServerError(`"${name}" depends on "${dep}", which does not exist`)
             }
         }
 
@@ -77,7 +82,7 @@ export class OMSSServer {
      */
     getDecorator<T>(name: string): T {
         if (!Object.hasOwn(this, name)) {
-            throw new Error(`Decorator "${name}" not found`)
+            throw new OMSSServerError(`Decorator "${name}" not found`)
         }
 
         return this[name as keyof this] as T

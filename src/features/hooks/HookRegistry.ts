@@ -3,7 +3,7 @@ import type { OMSSHooks } from '@/types/hooks.js'
 /**
  * Hook Registry
  *
- * Manages lifecycle hooks for strongly-typed events.
+ * Manages lifecycle hooks for OMSS events.
  * @typeParam THooks - A record of hook names to their handler functions.
  */
 export class HookRegistry {
@@ -21,7 +21,7 @@ export class HookRegistry {
      * @param payload - The payload to pass to each hook handler.
      * @internal
      */
-    async run<K extends keyof OMSSHooks>(name: K, payload: OMSSHooks[K] extends (payload: infer P) => any ? P : never): Promise<void> {
+    async run<K extends keyof OMSSHooks>(name: K, payload: OMSSHooks[K] extends (payload: infer P) => unknown ? P : never): Promise<void> {
         const fns = this.hooks.get(name) ?? []
 
         for (const fn of fns) {
