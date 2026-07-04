@@ -40,16 +40,14 @@ jobs:
             - name: Build
               run: npm run build
 
-            - name: Run integration tests
-              run: npm run test:integration
-
-            - name: Run unit tests with coverage (non fatal)
-              run: npm run test:coverage
+            - name: Run tests
+              run: npm run test
+              continue-on-error: true
 
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@v5
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
 
-            - name: Run unit tests with coverage (fatal)
-              run: npm run test:coverage:fatal
+            - name: Run tests but fail if coverage is below 100%
+              run: npm run test
