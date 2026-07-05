@@ -57,6 +57,11 @@ export type ProviderSourcesMeta<T> = {
 }
 
 /**
+ * Provider with an unknown resolver. Utils for other services and registries
+ */
+export type UnknownProvider = OMSSProvider<BaseResolver<unknown>>
+
+/**
  * The result of a provider getSources call.
  */
 export type ProviderResult = Result<OMSSProviderResults, OMSSProviderError>
