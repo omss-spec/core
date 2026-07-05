@@ -1,7 +1,7 @@
 import type { OMSSConfiguredPluginType, OMSSPluginOptions, OMSSPluginType, StoredPlugin, UnknownPluginType } from '@/types/plugin.js'
 import OMSSServer from '@/core/server.js'
-
 import { PluginState } from '@/features/plugins/plugin-state.js'
+import { OMSSPluginError } from '@/utils/error.js'
 
 /**
  * Registry responsible for executing and managing OMSS Plugins.
@@ -43,11 +43,11 @@ export class PluginRegistry {
         if (state === PluginState.Registering) {
             const chain = [...this.#stack, plugin].map((p) => p.name).join(' -> ')
 
-            throw new Error(`Circular plugin dependency detected: ${chain}`)
+            throw new OMSSPluginError(`Circular plugin dependency detected: ${chain}`)
         }
 
         if (state === PluginState.Registered) {
-            throw new Error(`Plugin "${plugin.name}" is already registered`)
+            throw new OMSSPluginError(`Plugin "${plugin.name}" is already registered`)
         }
 
         // Start registering
@@ -75,7 +75,7 @@ export class PluginRegistry {
             this.#states.set(plugin, PluginState.Registered)
         } catch (err) {
             this.#states.delete(plugin)
-            throw err
+            throw new OMSSPluginError(`Failed to register plugin "${plugin.name}"`, { cause: err })
         } finally {
             this.#stack.pop()
         }
