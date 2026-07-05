@@ -113,11 +113,11 @@ describe('Plugin Lifecycle Integration', () => {
         async function selfRef(s: OMSSServer) {
             await s.plugins.register(selfRef)
         }
-        await expect(server.plugins.register(selfRef)).rejects.toThrow('Circular plugin dependency detected')
+        expect(server.plugins.register(selfRef)).rejects.toThrow('Circular plugin dependency detected')
     })
 
     it('throws when a plugin throws during execution', async () => {
-        await expect(
+        expect(
             server.plugins.register(async () => {
                 throw new Error('plugin failed')
             })

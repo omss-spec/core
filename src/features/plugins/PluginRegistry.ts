@@ -75,7 +75,7 @@ export class PluginRegistry {
             this.#states.set(plugin, PluginState.Registered)
         } catch (err) {
             this.#states.delete(plugin)
-            throw new OMSSPluginError(`Failed to register plugin "${plugin.name}"`, { cause: err })
+            throw err
         } finally {
             this.#stack.pop()
         }
