@@ -1,6 +1,7 @@
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import OMSSServer from '@/core/server.js'
 import { SourceRegistry } from '@/features/source/SourceRegistry.js'
+import { UnknownProvider } from '@/types/provider.js'
 
 /**
  * The public API for resolving sources for media.
@@ -30,5 +31,22 @@ export class SourceService {
      */
     async initializeProviders() {
         return await this.#sourceRegistry.initializeProviders()
+    }
+
+    /**
+     * Registers a provider with the source registry.
+     * NOTE: You still need {@link RegisterProvider} decorator to register your provider.
+     * @param provider - Provider to register
+     */
+    registerProvider(provider: UnknownProvider) {
+        return this.#sourceRegistry.registerProvider(provider)
+    }
+
+    /**
+     * Discovers providers in the specified directory and registers them.
+     * @param directory - The directory to search for providers.
+     */
+    async discoverProviders(directory: string) {
+        return await this.#sourceRegistry.discoverProviders(directory)
     }
 }

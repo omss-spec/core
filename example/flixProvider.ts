@@ -2,8 +2,6 @@ import { BaseProvider, OK, ProviderResult, ProviderSourcesMeta, RegisterProvider
 // @ts-ignore
 import { resolver } from './tmdbResolver.js'
 
-console.log('Registering FlixProvider...')
-
 @RegisterProvider()
 export class FlixProvider extends BaseProvider<typeof resolver> {
     readonly baseUrl = 'https://example.com/api/v1/'
@@ -14,7 +12,6 @@ export class FlixProvider extends BaseProvider<typeof resolver> {
     readonly resolver = resolver
     readonly supportedIds = ['*']
 
-    // meta is inferred as TMDBMedia — fully typed, no cast needed
     async getSources(media: ProviderSourcesMeta<ResolverMetadata<typeof resolver>>): Promise<ProviderResult> {
         // media.meta is TMDBMedia — title and id are available
         console.log(`Fetching sources for: ${media.meta.title} (id: ${media.meta.id})`)

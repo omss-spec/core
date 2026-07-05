@@ -1,6 +1,9 @@
 import { UnknownProvider } from '@/types/provider.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { OMSSProviderError } from '@/utils/error.js'
+import * as path from 'node:path'
+import * as fs from 'node:fs/promises'
+import { pathToFileURL } from 'node:url'
 
 type ProviderConstructor<T extends UnknownProvider = UnknownProvider> = new () => T
 
@@ -73,5 +76,55 @@ export class SourceRegistry {
             this.#providers.push(provider)
         }
         return this.#providers.length
+    }
+
+    /**
+     * This is just a placeholder, because providers get autoregistered as soon as imported. To call this method, that happens, so we don't have to do anything here.
+     * @param provider - Provider to register
+     */
+    registerProvider(provider: UnknownProvider) {
+        provider.name
+    }
+
+    /**
+     * Discovers providers in the specified directory and registers them.
+     * @param directory - The directory to search for providers.
+     */
+    async discoverProviders(directory: string): Promise<void> {
+        const absoluteDir = path.resolve(directory)
+
+        const dirExists = await fs
+            .access(absoluteDir)
+            .then(() => true)
+            .catch(() => false)
+
+        if (!dirExists) {
+            throw new OMSSProviderError(`Directory "${absoluteDir}" does not exist`)
+        }
+
+        const entries = await fs.readdir(absoluteDir, { withFileTypes: true })
+
+        for (const entry of entries) {
+            const fullPath = path.resolve(absoluteDir, entry.name)
+
+            if (entry.isDirectory()) {
+                // Recurse into subdirectory
+                await this.discoverProviders(fullPath)
+                continue
+            }
+
+            // Only handle files from here on
+            const file = entry.name
+            if (!file.endsWith('.js') && !file.endsWith('.ts')) continue
+            if (file.includes('.test.') || file.includes('.spec.') || file.endsWith('.d.ts')) continue
+
+            const content = await fs.readFile(fullPath, 'utf-8')
+
+            const looksLikeProvider = content.includes('@RegisterProvider') && content.includes('extends BaseProvider')
+
+            if (!looksLikeProvider) continue
+
+            await import(pathToFileURL(fullPath).href)
+        }
     }
 }
