@@ -20,7 +20,7 @@ export class OMSSError extends Error {
  * Thrown when an error gets thrown in the OMSSServer class.
  *
  * @example
- * throw new OMSSServerError('config.name must be a non-empty string', {cause: config})
+ * return ERR(OMSSServerError('config.name must be a non-empty string', {cause: config}))
  */
 export class OMSSServerError extends OMSSError {}
 
@@ -28,7 +28,7 @@ export class OMSSServerError extends OMSSError {}
  * Thrown during plugin registration or execution.
  *
  * @example
- * throw new OMSSPluginError(`Plugin "${name}" is already registered`, { cause: plugin })
+ * return ERR(OMSSPluginError(`Plugin "${name}" is already registered`, { cause: plugin }))
  */
 export class OMSSPluginError extends OMSSError {}
 
@@ -36,7 +36,7 @@ export class OMSSPluginError extends OMSSError {}
  * Thrown during resolver registration or ID resolution.
  *
  * @example
- * throw new OMSSResolverError(`No resolver found for namespace "xyz"`, { cause: rawId })
+ * return ERR(OMSSResolverError(`No resolver found for namespace "xyz"`, { cause: rawId }))
  */
 export class OMSSResolverError extends OMSSError {}
 
@@ -44,6 +44,6 @@ export class OMSSResolverError extends OMSSError {}
  * Thrown during provider registration or source fetching.
  *
  * @example
- * throw new OMSSProviderError('Provider must have at least one resolver', { cause: provider })
+ * return ERR(OMSSProviderError('Provider must have at least one resolver', { cause: provider }))
  */
 export class OMSSProviderError extends OMSSError {}

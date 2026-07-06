@@ -2,6 +2,8 @@ import type { OMSSConfiguredPluginType, OMSSPluginOptions, OMSSPluginType, Store
 import OMSSServer from '@/core/server.js'
 import { PluginState } from '@/features/plugins/plugin-state.js'
 import { OMSSPluginError } from '@/utils/error.js'
+import { Result } from '@/types/utils.js'
+import { ERR, OK } from '@/utils/utils.js'
 
 /**
  * Registry responsible for executing and managing OMSS Plugins.
@@ -24,9 +26,9 @@ export class PluginRegistry {
      */
     readonly #stack: UnknownPluginType[] = []
 
-    async add(instance: OMSSServer, plugin: OMSSPluginType): Promise<void>
+    async add(instance: OMSSServer, plugin: OMSSPluginType): Promise<Result<PluginState.Registered, OMSSPluginError>>
 
-    async add<T>(instance: OMSSServer, plugin: OMSSConfiguredPluginType<T>, options: OMSSPluginOptions<T>): Promise<void>
+    async add<T>(instance: OMSSServer, plugin: OMSSConfiguredPluginType<T>, options: OMSSPluginOptions<T>): Promise<Result<PluginState.Registered, OMSSPluginError>>
 
     /**
      * Adds and runs a plugin with its options.
@@ -36,18 +38,18 @@ export class PluginRegistry {
      * @param plugin - The plugin function to register.
      * @param options - Plugin options or a factory function that resolves options.
      */
-    async add(instance: OMSSServer, plugin: UnknownPluginType, options?: unknown): Promise<void> {
-        // Check wether this plugin is already known
+    async add(instance: OMSSServer, plugin: UnknownPluginType, options?: unknown): Promise<Result<PluginState.Registered, OMSSPluginError>> {
+        // Check whether this plugin is already known
         const state = this.#states.get(plugin)
 
         if (state === PluginState.Registering) {
             const chain = [...this.#stack, plugin].map((p) => p.name).join(' -> ')
 
-            throw new OMSSPluginError(`Circular plugin dependency detected: ${chain}`)
+            return ERR(new OMSSPluginError(`Circular plugin dependency detected: ${chain}`))
         }
 
         if (state === PluginState.Registered) {
-            throw new OMSSPluginError(`Plugin "${plugin.name}" is already registered`)
+            return ERR(new OMSSPluginError(`Plugin "${plugin.name}" is already registered`))
         }
 
         // Start registering
@@ -73,16 +75,17 @@ export class PluginRegistry {
                 options,
             })
             this.#states.set(plugin, PluginState.Registered)
+            return OK(PluginState.Registered)
         } catch (err) {
             this.#states.delete(plugin)
-            throw err
+            return ERR(err instanceof OMSSPluginError ? err : new OMSSPluginError(String(err)))
         } finally {
             this.#stack.pop()
         }
     }
 
     /**
-     * Get current plugin state.
+     * Get the current plugin state.
      */
     getState(plugin: UnknownPluginType): PluginState {
         return this.#states.get(plugin) ?? PluginState.Unavailable

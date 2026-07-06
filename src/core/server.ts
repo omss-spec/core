@@ -6,6 +6,8 @@ import { OMSSServerError } from '@/utils/error.js'
 import type { OMSSConfig } from '@/types/config.js'
 import { SourceService } from '@/features/source/SourceService.js'
 import { SourceRegistry } from '@/features/source/SourceRegistry.js'
+import { ERR, OK } from '@/utils/utils.js'
+import { Result } from '@/types/utils.js'
 
 /**
  * Core server class for OMSS.
@@ -46,19 +48,22 @@ export class OMSSServer {
      * @param name - The name of the property to be decorated.
      * @param value - The value to be assigned to the property.
      * @param deps - An array of dependency names.
+     * @returns The name of the decorated property in the {@link Result} object.
      */
-    decorate<T>(name: string, value: T, deps: string[] = []): void {
+    decorate<T>(name: string, value: T, deps: string[] = []): Result<string, OMSSServerError> {
         if (Object.hasOwn(this, name)) {
-            throw new OMSSServerError(`Decorator "${name}" already exists`, {
-                cause: {
-                    existing: this[name as keyof this],
-                },
-            })
+            return ERR(
+                new OMSSServerError(`Decorator "${name}" already exists`, {
+                    cause: {
+                        existing: this[name as keyof this],
+                    },
+                })
+            )
         }
 
         for (const dep of deps) {
             if (!this.hasDecorator(dep)) {
-                throw new OMSSServerError(`"${name}" depends on "${dep}", which does not exist`)
+                return ERR(new OMSSServerError(`"${name}" depends on "${dep}", which does not exist`))
             }
         }
 
@@ -69,6 +74,8 @@ export class OMSSServer {
             configurable: false,
             enumerable: true,
         })
+
+        return OK(name)
     }
 
     /**
@@ -83,14 +90,14 @@ export class OMSSServer {
     /**
      * Get a decorated property by its name.
      * @param name - The name of the property to retrieve.
-     * @returns The decorated property value.
+     * @returns The decorated property value in the {@link Result} object.
      */
-    getDecorator<T>(name: string): T {
+    getDecorator<T>(name: string): Result<T, OMSSServerError> {
         if (!Object.hasOwn(this, name)) {
-            throw new OMSSServerError(`Decorator "${name}" not found`)
+            return ERR(new OMSSServerError(`Decorator "${name}" not found`))
         }
 
-        return this[name as keyof this] as T
+        return OK(this[name as keyof this] as T)
     }
 }
 

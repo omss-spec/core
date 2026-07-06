@@ -4,6 +4,8 @@ import { OMSSProviderError } from '@/utils/error.js'
 import * as path from 'node:path'
 import * as fs from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
+import { Result } from '@/types/utils.js'
+import { ERR, OK } from '@/utils/utils.js'
 
 type ProviderConstructor<T extends UnknownProvider = UnknownProvider> = new () => T
 
@@ -51,7 +53,7 @@ export class SourceRegistry {
      * Initializes all registered providers and runs the `onProviderRegister` hook for each provider.
      * @returns - The number of providers that were initialized.
      */
-    async initializeProviders(): Promise<number> {
+    async initializeProviders(): Promise<Result<number, OMSSProviderError>> {
         while (ProviderRegistry.providers.length > 0) {
             const Provider = ProviderRegistry.providers.shift()
             if (!Provider) break
@@ -59,11 +61,11 @@ export class SourceRegistry {
             const provider = new Provider()
 
             if (this.#insideOnProviderRegister) {
-                throw new OMSSProviderError('Providers cannot be registered during onProviderRegister')
+                return ERR(new OMSSProviderError('Providers cannot be registered during onProviderRegister'))
             }
 
             if (this.#providers.some((p) => p.id === provider.id)) {
-                throw new OMSSProviderError(`Provider "${provider.id}" already registered`)
+                return ERR(new OMSSProviderError(`Provider "${provider.id}" already registered`))
             }
 
             this.#insideOnProviderRegister = true
@@ -75,7 +77,7 @@ export class SourceRegistry {
 
             this.#providers.push(provider)
         }
-        return this.#providers.length
+        return OK(this.#providers.length)
     }
 
     /**
@@ -90,7 +92,7 @@ export class SourceRegistry {
      * Discovers providers in the specified directory and registers them.
      * @param directory - The directory to search for providers.
      */
-    async discoverProviders(directory: string): Promise<void> {
+    async discoverProviders(directory: string): Promise<Result<'ok', OMSSProviderError>> {
         const absoluteDir = path.resolve(directory)
 
         const dirExists = await fs
@@ -99,7 +101,7 @@ export class SourceRegistry {
             .catch(() => false)
 
         if (!dirExists) {
-            throw new OMSSProviderError(`Directory "${absoluteDir}" does not exist`)
+            return ERR(new OMSSProviderError(`Directory "${absoluteDir}" does not exist`))
         }
 
         const entries = await fs.readdir(absoluteDir, { withFileTypes: true })
@@ -108,7 +110,7 @@ export class SourceRegistry {
             const fullPath = path.resolve(absoluteDir, entry.name)
 
             if (entry.isDirectory()) {
-                // Recurse into subdirectory
+                // Recurse into a subdirectory
                 await this.discoverProviders(fullPath)
                 continue
             }
@@ -126,5 +128,11 @@ export class SourceRegistry {
 
             await import(pathToFileURL(fullPath).href)
         }
+
+        return OK('ok')
+    }
+
+    getProviders(filter?: (provider: UnknownProvider) => boolean) {
+        return this.#providers.filter(filter ?? (() => true))
     }
 }
