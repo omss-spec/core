@@ -2,12 +2,10 @@ import { OMSSServer } from '../src/index.js'
 
 export const server = new OMSSServer({ name: 'example' })
 await server.sources.discoverProviders('.')
-const number = await server.sources.initializeProviders()
-console.log(`Initialized ${number} providers.`)
+const res = await server.sources.initializeProviders()
+if (res.ok) console.log(`Initialized ${res.value} providers.`)
 
-const result = await server.sources.getSources('tmdb:155', {
-    abortSignal: AbortSignal.timeout(500),
-})
+const result = await server.sources.getSources('tmdb:155')
 if (result.ok) {
     console.log(result.value)
 } else {

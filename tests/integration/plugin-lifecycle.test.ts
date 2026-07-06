@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import OMSSServer from '@/core/server.js'
 import { PluginState } from '@/features/plugins/public-api.js'
+import { OMSSPluginError } from '@/utils/error.js'
 
 function makeServer(name = 'integration') {
     return new OMSSServer({ name })
@@ -95,33 +96,42 @@ describe('Plugin Lifecycle Integration', () => {
         expect(child).toHaveBeenCalledOnce()
     })
 
-    it('throws when the same plugin is registered twice', async () => {
+    it('return ERR when the same plugin is registered twice', async () => {
         const p = vi.fn(async () => {})
         await server.plugins.register(p)
-        await expect(server.plugins.register(p)).rejects.toThrow('already registered')
+        const res = await server.plugins.register(p)
+        expect(res.ok).toBe(false)
+        if (!res.ok) expect(res.error).toBeInstanceOf(OMSSPluginError)
     })
 
     it('prevents registration inside onPluginRegister', async () => {
         const inner = vi.fn(async () => {})
+
         server.hooks.add('onPluginRegister', async () => {
-            await server.plugins.register(inner)
+            const res = await server.plugins.register(inner)
+            expect(res.ok).toBe(false)
+            if (!res.ok) expect(res.error).toBeInstanceOf(OMSSPluginError)
         })
-        await expect(server.plugins.register(vi.fn(async () => {}))).rejects.toThrow('Plugins cannot be registered during onPluginRegister')
+
+        await server.plugins.register(vi.fn(async () => {}))
     })
 
-    it('throws on circular self-referencing plugin', async () => {
+    it('returns ERR on circular self-referencing plugin', async () => {
         async function selfRef(s: OMSSServer) {
-            await s.plugins.register(selfRef)
+            const res = await s.plugins.register(selfRef)
+            expect(res.ok).toBe(false)
+            if (!res.ok) expect(res.error).toBeInstanceOf(OMSSPluginError)
         }
-        expect(server.plugins.register(selfRef)).rejects.toThrow('Circular plugin dependency detected')
+        await server.plugins.register(selfRef)
     })
 
-    it('throws when a plugin throws during execution', async () => {
-        expect(
-            server.plugins.register(async () => {
-                throw new Error('plugin failed')
-            })
-        ).rejects.toThrow('plugin failed')
+    it('returns ERR with the Error when a plugin throws during execution', async () => {
+        const res = await server.plugins.register(async () => {
+            throw new Error('plugin failed')
+        })
+        expect(res.ok).toBe(false)
+        if (!res.ok) expect(res.error).toBeInstanceOf(OMSSPluginError)
+        if (!res.ok) expect(res.error.cause).toBeInstanceOf(Error)
     })
 
     it('state reverts to Unavailable after failure and retry succeeds', async () => {
@@ -130,7 +140,11 @@ describe('Plugin Lifecycle Integration', () => {
             attempt++
             if (attempt === 1) throw new Error('transient')
         }
-        await expect(server.plugins.register(flaky)).rejects.toThrow('transient')
+        const res = await server.plugins.register(flaky)
+        expect(res.ok).toBe(false)
+        if (!res.ok) expect(res.error).toBeInstanceOf(OMSSPluginError)
+        if (!res.ok) expect(res.error.cause).toBeInstanceOf(Error)
+        if (!res.ok && res.error.cause instanceof Error) expect(res.error.message).toBe('Error: transient')
         expect(server.plugins.getPluginState(flaky)).toBe(PluginState.Unavailable)
         await server.plugins.register(flaky)
         expect(server.plugins.getPluginState(flaky)).toBe(PluginState.Registered)

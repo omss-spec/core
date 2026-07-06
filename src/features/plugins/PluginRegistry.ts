@@ -78,7 +78,7 @@ export class PluginRegistry {
             return OK(PluginState.Registered)
         } catch (err) {
             this.#states.delete(plugin)
-            return ERR(err instanceof OMSSPluginError ? err : new OMSSPluginError(String(err)))
+            return ERR(err instanceof OMSSPluginError ? err : new OMSSPluginError(String(err), { cause: err }))
         } finally {
             this.#stack.pop()
         }

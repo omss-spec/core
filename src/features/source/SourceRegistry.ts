@@ -27,7 +27,7 @@ const ProviderRegistry = {
  * @decorator
  */
 export function RegisterProvider() {
-    return function <T extends UnknownProvider>(Provider: ProviderConstructor<T>, _context: ClassDecoratorContext) {
+    return function (Provider: ProviderConstructor) {
         ProviderRegistry.providers.push(Provider)
     }
 }

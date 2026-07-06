@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PluginRegistry } from '@/features/plugins/PluginRegistry.js'
 import { PluginState } from '@/features/plugins/public-api.js'
 import OMSSServer from '@/core/server.js'
+import { OMSSPluginError } from '@/utils/error.js'
 
 function makeServer(): OMSSServer {
     return new OMSSServer({ name: 'test-server' })
@@ -68,18 +69,20 @@ describe('PluginRegistry', () => {
         it('throws when the same plugin is registered twice', async () => {
             const plugin = vi.fn(async () => {})
             await registry.add(server, plugin)
-
-            await expect(registry.add(server, plugin)).rejects.toThrow(`Plugin "${plugin.name}" is already registered`)
+            const res = await registry.add(server, plugin)
+            expect(res.ok).toBe(false)
+            if (!res.ok) expect(res.error.message).toBe(`Plugin "${plugin.name}" is already registered`)
         })
     })
 
     describe('add() — circular dependency detection', () => {
         it('throws on a direct self-referencing plugin', async () => {
             async function selfCircular(s: OMSSServer) {
-                await registry.add(s, selfCircular)
+                const res = await registry.add(s, selfCircular)
+                expect(res.ok).toBe(false)
+                if (!res.ok) expect(res.error.message).toBe(`Circular plugin dependency detected`)
             }
-
-            await expect(registry.add(server, selfCircular)).rejects.toThrow('Circular plugin dependency detected')
+            await registry.add(server, selfCircular)
         })
 
         it('throws on an indirect A → B → A cycle', async () => {
@@ -87,10 +90,11 @@ describe('PluginRegistry', () => {
                 await registry.add(s, pluginB)
             }
             async function pluginB(s: OMSSServer) {
-                await registry.add(s, pluginA)
+                const res = await registry.add(s, pluginA)
+                expect(res.ok).toBe(false)
+                if (!res.ok) expect(res.error).toBe('Circular plugin dependency detected: pluginA -> pluginB -> pluginA')
             }
-
-            await expect(registry.add(server, pluginA)).rejects.toThrow('Circular plugin dependency detected')
+            await registry.add(server, pluginA)
         })
     })
 
@@ -101,11 +105,13 @@ describe('PluginRegistry', () => {
                 calls++
                 if (calls === 1) throw new Error('first fails')
             }
-
-            await expect(registry.add(server, flakyPlugin)).rejects.toThrow('first fails')
+            const first = await registry.add(server, flakyPlugin)
+            expect(first.ok).toBe(false)
+            if (!first.ok) expect(first.error.message).toBe(`Error: first fails`)
             expect(registry.getState(flakyPlugin)).toBe(PluginState.Unavailable)
 
-            await registry.add(server, flakyPlugin)
+            const second = await registry.add(server, flakyPlugin)
+            expect(second.ok).toBe(true)
             expect(registry.getState(flakyPlugin)).toBe(PluginState.Registered)
         })
 
@@ -113,7 +119,26 @@ describe('PluginRegistry', () => {
             const plugin = vi.fn(async () => {
                 throw new Error('plugin exploded')
             })
-            await expect(registry.add(server, plugin)).rejects.toThrow('plugin exploded')
+            const res = await registry.add(server, plugin)
+            expect(res.ok).toBe(false)
+            if (!res.ok) {
+                expect(res.error.message).toBe('Error: plugin exploded')
+                expect(res.error.cause).toBeInstanceOf(Error)
+                const cause = res.error.cause as Error
+                expect(cause.message).toBe('plugin exploded')
+            }
+        })
+
+        it('Keeps the original OMSSPluginError from a failing plugin', async () => {
+            const plugin = vi.fn(async () => {
+                throw new OMSSPluginError('plugin error')
+            })
+            const res = await registry.add(server, plugin)
+            expect(res.ok).toBe(false)
+            if (!res.ok) {
+                expect(res.error).toBeInstanceOf(OMSSPluginError)
+                expect(res.error.message).toBe('plugin error')
+            }
         })
     })
 })

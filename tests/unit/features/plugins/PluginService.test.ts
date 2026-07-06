@@ -4,6 +4,7 @@ import { PluginRegistry } from '@/features/plugins/PluginRegistry.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { PluginState } from '@/features/plugins/public-api.js'
 import OMSSServer from '@/core/server.js'
+import { OMSSPluginError } from '@/utils/error.js'
 
 function setup() {
     const server = new OMSSServer({ name: 'svc-test' })
@@ -69,11 +70,12 @@ describe('PluginService', () => {
             const inner = vi.fn(async () => {})
             hookRegistry.hooks.set('onPluginRegister', [
                 vi.fn(async () => {
-                    await service.register(inner)
+                    const res = await service.register(inner)
+                    expect(res.ok).toBe(false)
+                    if (!res.ok) expect(res.error.message).toBe('Plugins cannot be registered during onPluginRegister')
+                    if (!res.ok) expect(res.error).toBeInstanceOf(OMSSPluginError)
                 }),
             ])
-
-            expect(service.register(vi.fn(async () => {}))).rejects.toThrow('Plugins cannot be registered during onPluginRegister')
         })
 
         it('resets the re-entrancy guard after a hook throws', async () => {
@@ -85,17 +87,18 @@ describe('PluginService', () => {
                 }),
             ])
 
-            expect(service.register(vi.fn(async () => {}))).rejects.toThrow('hook error')
+            await expect(service.register(vi.fn(async () => {}))).rejects.toThrow('hook error')
 
             const inner = vi.fn(async () => {})
 
             hookRegistry.hooks.set('onPluginRegister', [
                 vi.fn(async () => {
-                    await service.register(inner)
+                    const res = await service.register(inner)
+                    expect(res.ok).toBe(false)
+                    if (!res.ok) expect(res.error.message).toBe('Plugins cannot be registered during onPluginRegister')
+                    if (!res.ok) expect(res.error).toBeInstanceOf(OMSSPluginError)
                 }),
             ])
-
-            expect(service.register(vi.fn(async () => {}))).rejects.toThrow('Plugins cannot be registered during onPluginRegister')
         })
     })
 

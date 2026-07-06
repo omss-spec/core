@@ -64,14 +64,18 @@ export class SourceService {
      * @returns Promise resolving to aggregated source list or an error
      */
     async getSources(omssId: OMSSId, { providerId, abortSignal }: { providerId?: string; abortSignal?: AbortSignal } = {}): Promise<Result<OMSSProviderResults, OMSSProviderError>> {
-        const standardizedId = parseOMSSId(omssId)
+        const parsed = parseOMSSId(omssId)
+
+        if (!parsed.ok) {
+            return parsed
+        }
 
         const providers: UnknownProvider[] = providerId
-            ? this.#sourceRegistry.getProviders((p) => p.id === providerId && p.resolver.namespace === standardizedId.namespace)
-            : this.#sourceRegistry.getProviders((p) => p.resolver.namespace === standardizedId.namespace)
+            ? this.#sourceRegistry.getProviders((p) => p.id === providerId && p.resolver.namespace === parsed.value.namespace)
+            : this.#sourceRegistry.getProviders((p) => p.resolver.namespace === parsed.value.namespace)
 
         if (providers.length === 0) {
-            return ERR(new OMSSProviderError(`No providers found for namespace "${standardizedId.namespace}"` + (providerId ? ` and provider "${providerId}"` : '')))
+            return ERR(new OMSSProviderError(`No providers found for namespace "${parsed.value.namespace}"` + (providerId ? ` and provider "${providerId}"` : '')))
         }
 
         const fallbackController = abortSignal ? null : new AbortController()
@@ -96,7 +100,7 @@ export class SourceService {
                     if (signal.aborted) return aborted()
 
                     try {
-                        const result = await provider.resolver.resolve(standardizedId, ctx)
+                        const result = await provider.resolver.resolve(parsed.value, ctx)
 
                         if (!result.ok) {
                             return ERR(new OMSSProviderError(`Resolver failed for ${resolverKey}: ${result.error.message}`))
@@ -127,7 +131,7 @@ export class SourceService {
                 if (signal.aborted) return aborted()
 
                 return await provider.getSources({
-                    omssId: standardizedId,
+                    omssId: parsed.value,
                     meta: metaResult.value,
                 })
             } catch (err) {
@@ -155,7 +159,7 @@ export class SourceService {
         }
 
         if (!hasSuccess) {
-            return ERR(new OMSSProviderError(`All providers failed for namespace "${standardizedId.namespace}"`))
+            return ERR(new OMSSProviderError(`All providers failed for namespace "${parsed.value.namespace}"`))
         }
 
         return OK({ sources })
