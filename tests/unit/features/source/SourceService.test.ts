@@ -183,6 +183,28 @@ describe('SourceService', () => {
             if (result.ok) expect(result.value.sources).toEqual(['a', 'b', 'c'])
         })
 
+        it('returns the namespace-only error when no providers match', async () => {
+            vi.spyOn(sourceRegistry, 'getProviders').mockReturnValue([])
+
+            const result = await service.getSources('tmdb:12345')
+
+            expect(result.ok).toBe(false)
+            if (!result.ok) {
+                expect(result.error.message).toBe('No providers found for namespace "tmdb"')
+            }
+        })
+
+        it('returns the namespace+provider error when providerId is requested but no providers match', async () => {
+            vi.spyOn(sourceRegistry, 'getProviders').mockReturnValue([])
+
+            const result = await service.getSources('tmdb:12345', { providerId: 'missing-provider' })
+
+            expect(result.ok).toBe(false)
+            if (!result.ok) {
+                expect(result.error.message).toBe('No providers found for namespace "tmdb" and provider "missing-provider"')
+            }
+        })
+
         it('filters by providerId when specified', async () => {
             const getProvidersSpy = vi.spyOn(sourceRegistry, 'getProviders').mockReturnValue([makeProvider('target', { namespace: 'tmdb', sources: ['x'] })])
 

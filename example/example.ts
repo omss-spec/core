@@ -1,6 +1,6 @@
 import { OMSSServer } from '../src/index.js'
 
-export const server = new OMSSServer({ name: 'example' })
+const server = new OMSSServer({ name: 'example' })
 await server.sources.discoverProviders('.')
 const res = await server.sources.initializeProviders()
 if (res.ok) console.log(`Initialized ${res.value} providers.`)

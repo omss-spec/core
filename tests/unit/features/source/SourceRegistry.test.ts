@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as fs from 'node:fs/promises'
-import * as path from 'node:path'
 import { RegisterProvider, SourceRegistry } from '@/features/source/SourceRegistry.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { OMSSProviderError } from '@/utils/error.js'
 import type { UnknownProvider } from '@/types/provider.js'
 import type { BaseResolver } from '@/features/resolvers/BaseResolver.js'
+import * as path from 'node:path'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -324,7 +324,6 @@ describe('SourceRegistry', () => {
     // -------------------------------------------------------------------------
 
     describe('discoverProviders()', () => {
-        vi.mocked(fs)
         beforeEach(() => {
             vi.mock('node:fs/promises')
         })
