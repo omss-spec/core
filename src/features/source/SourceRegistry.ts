@@ -136,3 +136,10 @@ export class SourceRegistry {
         return this.#providers.filter(filter ?? (() => true))
     }
 }
+
+/**
+ * @internal - To unit test the SourceRegistry, we need to access the internal registry.
+ */
+export const __internal_provider_registry__ = {
+    ProviderRegistry,
+}

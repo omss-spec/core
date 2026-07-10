@@ -1,15 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as fs from 'node:fs/promises'
-import { RegisterProvider, SourceRegistry } from '@/features/source/SourceRegistry.js'
+import { __internal_provider_registry__, RegisterProvider, SourceRegistry } from '@/features/source/SourceRegistry.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { OMSSProviderError } from '@/utils/error.js'
 import type { UnknownProvider } from '@/types/provider.js'
 import type { BaseResolver } from '@/features/resolvers/BaseResolver.js'
 import * as path from 'node:path'
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function makeResolver(namespace = 'test'): BaseResolver<unknown> {
     return {
@@ -31,10 +27,6 @@ function makeProvider(id: string, namespace = 'test'): UnknownProvider {
         getSources: vi.fn().mockResolvedValue({ ok: true, value: { sources: [] } }),
     }
 }
-
-// ---------------------------------------------------------------------------
-// RegisterProvider decorator
-// ---------------------------------------------------------------------------
 
 describe('RegisterProvider decorator', () => {
     it('pushes the constructor into the internal ProviderRegistry', async () => {
@@ -59,11 +51,17 @@ describe('RegisterProvider decorator', () => {
         // At least the one we just pushed was processed
         if (result.ok) expect(result.value).toBeGreaterThanOrEqual(1)
     })
-})
 
-// ---------------------------------------------------------------------------
-// SourceRegistry unit tests
-// ---------------------------------------------------------------------------
+    it('skips a falsy entry in the provider queue (break guard)', async () => {
+        // Directly push undefined into the internal queue to trigger the `if (!Provider) break`
+        ;(__internal_provider_registry__.ProviderRegistry as any).providers.push(undefined)
+
+        const hookRegistry = new HookRegistry()
+        const registry = new SourceRegistry(hookRegistry)
+        const result = await registry.initializeProviders()
+        expect(result.ok).toBe(true)
+    })
+})
 
 describe('SourceRegistry', () => {
     let hookRegistry: HookRegistry
@@ -73,10 +71,6 @@ describe('SourceRegistry', () => {
         hookRegistry = new HookRegistry()
         registry = new SourceRegistry(hookRegistry)
     })
-
-    // -------------------------------------------------------------------------
-    // initializeProviders
-    // -------------------------------------------------------------------------
 
     describe('initializeProviders()', () => {
         it('returns OK(0) when no providers are queued', async () => {
@@ -238,10 +232,6 @@ describe('SourceRegistry', () => {
         })
     })
 
-    // -------------------------------------------------------------------------
-    // registerProvider
-    // -------------------------------------------------------------------------
-
     describe('registerProvider()', () => {
         it('is a no-op placeholder that accesses provider.name', () => {
             const provider = makeProvider('reg-1')
@@ -249,10 +239,6 @@ describe('SourceRegistry', () => {
             expect(() => registry.registerProvider(provider)).not.toThrow()
         })
     })
-
-    // -------------------------------------------------------------------------
-    // getProviders
-    // -------------------------------------------------------------------------
 
     describe('getProviders()', () => {
         it('returns empty array when no providers are initialized', () => {
@@ -318,10 +304,6 @@ describe('SourceRegistry', () => {
             expect(result[0]!.id).toBe('fp1')
         })
     })
-
-    // -------------------------------------------------------------------------
-    // discoverProviders
-    // -------------------------------------------------------------------------
 
     describe('discoverProviders()', () => {
         beforeEach(() => {

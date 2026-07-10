@@ -1,17 +1,12 @@
-// src/features/source/SourceService.test.ts
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SourceService } from '@/features/source/SourceService.js'
-import { SourceRegistry } from '@/features/source/SourceRegistry.js'
+import { RegisterProvider, SourceRegistry } from '@/features/source/SourceRegistry.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { OMSSServer } from '@/core/server.js'
 import { OMSSProviderError } from '@/utils/error.js'
 import { ERR, OK } from '@/utils/utils.js'
 import type { UnknownProvider } from '@/types/provider.js'
 import type { BaseResolver } from '@/features/resolvers/BaseResolver.js'
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function makeResolver(namespace = 'tmdb', name = 'tmdb-resolver'): BaseResolver<unknown> {
     return {
@@ -52,10 +47,6 @@ function makeTestServer(): OMSSServer {
     return new OMSSServer({ name: 'test-server' })
 }
 
-// ---------------------------------------------------------------------------
-// SourceService unit tests
-// ---------------------------------------------------------------------------
-
 describe('SourceService', () => {
     let hookRegistry: HookRegistry
     let sourceRegistry: SourceRegistry
@@ -69,10 +60,6 @@ describe('SourceService', () => {
         service = new SourceService(server, sourceRegistry, hookRegistry)
     })
 
-    // -------------------------------------------------------------------------
-    // initializeProviders — delegation
-    // -------------------------------------------------------------------------
-
     describe('initializeProviders()', () => {
         it('delegates to SourceRegistry.initializeProviders', async () => {
             const spy = vi.spyOn(sourceRegistry, 'initializeProviders').mockResolvedValue(OK(0))
@@ -81,10 +68,6 @@ describe('SourceService', () => {
             expect(result).toEqual(OK(0))
         })
     })
-
-    // -------------------------------------------------------------------------
-    // registerProvider — delegation
-    // -------------------------------------------------------------------------
 
     describe('registerProvider()', () => {
         it('delegates to SourceRegistry.registerProvider', () => {
@@ -95,10 +78,6 @@ describe('SourceService', () => {
         })
     })
 
-    // -------------------------------------------------------------------------
-    // discoverProviders — delegation
-    // -------------------------------------------------------------------------
-
     describe('discoverProviders()', () => {
         it('delegates to SourceRegistry.discoverProviders', async () => {
             const spy = vi.spyOn(sourceRegistry, 'discoverProviders').mockResolvedValue(OK('ok'))
@@ -107,10 +86,6 @@ describe('SourceService', () => {
             expect(result).toEqual(OK('ok'))
         })
     })
-
-    // -------------------------------------------------------------------------
-    // getSources — invalid OMSS ID
-    // -------------------------------------------------------------------------
 
     describe('getSources() — invalid OMSS ID', () => {
         it('returns ERR for an ID missing the ":" separator', async () => {
@@ -131,10 +106,6 @@ describe('SourceService', () => {
             if (!result.ok) expect(result.error.message).toContain('Invalid OMSS namespace')
         })
     })
-
-    // -------------------------------------------------------------------------
-    // getSources — no providers
-    // -------------------------------------------------------------------------
 
     describe('getSources() — no matching providers', () => {
         it('returns ERR when no providers match the namespace', async () => {
@@ -159,10 +130,6 @@ describe('SourceService', () => {
         })
     })
 
-    // -------------------------------------------------------------------------
-    // getSources — happy path
-    // -------------------------------------------------------------------------
-
     describe('getSources() — success', () => {
         it('returns aggregated sources from a single provider', async () => {
             const provider = makeProvider('p1', { namespace: 'tmdb', sources: ['url-1', 'url-2'] })
@@ -171,6 +138,70 @@ describe('SourceService', () => {
             const result = await service.getSources('tmdb:12345')
             expect(result.ok).toBe(true)
             if (result.ok) expect(result.value.sources).toEqual(['url-1', 'url-2'])
+        })
+
+        it('filters providers by namespace using the real predicate (no mocked getProviders)', async () => {
+            class NsAProvider {
+                id = 'ns-a-provider'
+                name = 'NsA'
+                enabled = true
+                baseUrl = ''
+                headers = {}
+                supportedIds = ['*']
+                resolver = { namespace: 'tmdb', name: 'r1', resolve: vi.fn().mockResolvedValue(OK({})) }
+                getSources = vi.fn().mockResolvedValue(OK({ sources: ['ns-a-src'] }))
+            }
+            class NsBProvider {
+                id = 'ns-b-provider'
+                name = 'NsB'
+                enabled = true
+                baseUrl = ''
+                headers = {}
+                supportedIds = ['*']
+                resolver = { namespace: 'anilist', name: 'r2', resolve: vi.fn().mockResolvedValue(OK({})) }
+                getSources = vi.fn().mockResolvedValue(OK({ sources: ['ns-b-src'] }))
+            }
+
+            RegisterProvider()(NsAProvider as unknown as new () => any)
+            RegisterProvider()(NsBProvider as unknown as new () => any)
+
+            await sourceRegistry.initializeProviders() // real registration, no spy on getProviders
+
+            const result = await service.getSources('tmdb:12345', { providerId: 'ns-a-provider' }) // real predicate runs here
+            expect(result.ok).toBe(true)
+            if (result.ok) expect(result.value.sources).toEqual(['ns-a-src'])
+        })
+
+        it('filters providers by namespace using the real predicate (no mocked getProviders)', async () => {
+            class NsAProvider {
+                id = 'ns-a-provider'
+                name = 'NsA'
+                enabled = true
+                baseUrl = ''
+                headers = {}
+                supportedIds = ['*']
+                resolver = { namespace: 'tmdb', name: 'r1', resolve: vi.fn().mockResolvedValue(OK({})) }
+                getSources = vi.fn().mockResolvedValue(OK({ sources: ['ns-a-src'] }))
+            }
+            class NsBProvider {
+                id = 'ns-b-provider'
+                name = 'NsB'
+                enabled = true
+                baseUrl = ''
+                headers = {}
+                supportedIds = ['*']
+                resolver = { namespace: 'anilist', name: 'r2', resolve: vi.fn().mockResolvedValue(OK({})) }
+                getSources = vi.fn().mockResolvedValue(OK({ sources: ['ns-b-src'] }))
+            }
+
+            RegisterProvider()(NsAProvider as unknown as new () => any)
+            RegisterProvider()(NsBProvider as unknown as new () => any)
+
+            await sourceRegistry.initializeProviders() // real registration, no spy on getProviders
+
+            const result = await service.getSources('tmdb:12345') // real predicate runs here
+            expect(result.ok).toBe(true)
+            if (result.ok) expect(result.value.sources).toEqual(['ns-a-src'])
         })
 
         it('merges sources from multiple providers', async () => {
@@ -227,11 +258,50 @@ describe('SourceService', () => {
             // Resolver should only be called ONCE despite two providers sharing it
             expect(resolveSpy).toHaveBeenCalledTimes(1)
         })
-    })
 
-    // -------------------------------------------------------------------------
-    // getSources — resolver failures
-    // -------------------------------------------------------------------------
+        it('hits the resolver cache for providers sharing the same resolver key', async () => {
+            const sharedResolver = makeResolver('tmdb', 'shared-resolver')
+            const resolveSpy = sharedResolver.resolve as ReturnType<typeof vi.fn>
+
+            let resolveCount = 0
+            resolveSpy.mockImplementation(async () => {
+                resolveCount++
+                return OK({ title: 'Cached' })
+            })
+
+            const p1: UnknownProvider = { ...makeProvider('p1'), resolver: sharedResolver }
+            const p2: UnknownProvider = { ...makeProvider('p2'), resolver: sharedResolver }
+            const p3: UnknownProvider = { ...makeProvider('p3'), resolver: sharedResolver }
+            vi.spyOn(sourceRegistry, 'getProviders').mockReturnValue([p1, p2, p3])
+
+            const result = await service.getSources('tmdb:99')
+            expect(result.ok).toBe(true)
+            // Cache hit: resolver called only once despite 3 providers sharing it
+            expect(resolveCount).toBe(1)
+        })
+
+        it('returns ERR when signal is aborted after resolver resolves but before getSources is called', async () => {
+            const controller = new AbortController()
+
+            const provider = makeProvider('p1', { namespace: 'tmdb' })
+
+            // Abort the signal during resolver resolution, so by the time
+            // we reach the second `if (signal.aborted)` check before getSources, it's already aborted
+            ;(provider.resolver.resolve as ReturnType<typeof vi.fn>).mockImplementation(async () => {
+                controller.abort()
+                return OK({ title: 'resolved but aborted' })
+            })
+
+            vi.spyOn(sourceRegistry, 'getProviders').mockReturnValue([provider])
+
+            const result = await service.getSources('tmdb:12345', { abortSignal: controller.signal })
+            expect(result.ok).toBe(false)
+            if (!result.ok) expect(result.error.message).toBe('Operation aborted')
+
+            // getSources should NOT have been called
+            expect(provider.getSources as ReturnType<typeof vi.fn>).not.toHaveBeenCalled()
+        })
+    })
 
     describe('getSources() — resolver failures', () => {
         it('returns ERR when resolver returns ok:false', async () => {
@@ -299,10 +369,6 @@ describe('SourceService', () => {
             if (result.ok) expect(result.value.sources).toContain('good-src')
         })
     })
-
-    // -------------------------------------------------------------------------
-    // getSources — abort signal
-    // -------------------------------------------------------------------------
 
     describe('getSources() — abort signal', () => {
         it('returns ERR("Operation aborted") when signal is pre-aborted', async () => {
