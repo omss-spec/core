@@ -20,17 +20,17 @@ export interface OMSSProvider<P extends BaseResolver<unknown>> {
     /** Whether the provider will be used. */
     readonly enabled: boolean
 
-    /** Base URL for the provider's API. */
-    readonly baseUrl: string
-
-    /** Headers to send with every request. */
-    readonly headers: Record<string, string>
-
-    /** IDs that this provider supports. That are the ID values of OMSS IDs. Meaning without the namespace.
-     * @example ["12345", "67890"]
-     * @example ['*'] // for all IDs
+    /**
+     * Catalog of media this provider supports. It does not have to exist. If it does, it should be a list of media IDs.
+     * This does not get queried for source resolving, but more metadata about the provider.
      */
-    readonly supportedIds: string[] | (() => string[] | Promise<string[]>)
+    readonly catalog?: string[] | (() => Promise<string[]>)
+
+    /**
+     * Provide a method that checks whether this provider supports a certain ID.
+     * @param id - Parsed OMSS ID
+     */
+    readonly supportsId: (id: ParsedOMSSId) => boolean | Promise<boolean>
 
     /** Resolver that this provider is bound to. */
     readonly resolver: P

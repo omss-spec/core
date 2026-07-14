@@ -39,7 +39,7 @@ describe('Plugin Lifecycle Integration', () => {
         const p = vi.fn(async (_s: OMSSServer, o: { name: string }) => {
             expect(o.name).toBe('integration')
         })
-        await server.plugins.register(p, (s) => ({ name: s.getConfig().name }))
+        await server.plugins.register(p, (s) => ({ name: s.config.name }))
         expect(p).toHaveBeenCalledOnce()
     })
 
@@ -154,7 +154,7 @@ describe('Plugin Lifecycle Integration', () => {
         const s = makeServer('config-check')
         let name: string | undefined
         await s.plugins.register(async (sv) => {
-            name = sv.getConfig().name
+            name = sv.config.name
         })
         expect(name).toBe('config-check')
     })

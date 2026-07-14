@@ -9,7 +9,6 @@ export * from '@/core/server.js'
 export * from '@/features/plugins/public-api.js'
 export * from '@/features/resolvers/public-api.js'
 export * from '@/features/providers/public-api.js'
-export * from '@/features/source/public-api.js'
 export * from '@/utils/public-api.js'
 
 /**

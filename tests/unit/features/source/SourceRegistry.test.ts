@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as fs from 'node:fs/promises'
-import { __internal_provider_registry__, RegisterProvider, SourceRegistry } from '@/features/source/SourceRegistry.js'
+import { __internal_provider_registry__, ProviderRegistry, RegisterProvider } from '@/features/providers/ProviderRegistry.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { OMSSProviderError } from '@/utils/error.js'
 import type { UnknownProvider } from '@/types/provider.js'
@@ -44,7 +44,7 @@ describe('RegisterProvider decorator', () => {
         RegisterProvider()(TestProviderA as unknown as new () => any)
 
         const hookRegistry = new HookRegistry()
-        const registry = new SourceRegistry(hookRegistry)
+        const registry = new ProviderRegistry(hookRegistry)
         const result = await registry.initializeProviders()
 
         expect(result.ok).toBe(true)
@@ -57,7 +57,7 @@ describe('RegisterProvider decorator', () => {
         ;(__internal_provider_registry__.ProviderRegistry as any).providers.push(undefined)
 
         const hookRegistry = new HookRegistry()
-        const registry = new SourceRegistry(hookRegistry)
+        const registry = new ProviderRegistry(hookRegistry)
         const result = await registry.initializeProviders()
         expect(result.ok).toBe(true)
     })
@@ -65,11 +65,11 @@ describe('RegisterProvider decorator', () => {
 
 describe('SourceRegistry', () => {
     let hookRegistry: HookRegistry
-    let registry: SourceRegistry
+    let registry: ProviderRegistry
 
     beforeEach(() => {
         hookRegistry = new HookRegistry()
-        registry = new SourceRegistry(hookRegistry)
+        registry = new ProviderRegistry(hookRegistry)
     })
 
     describe('initializeProviders()', () => {
@@ -132,7 +132,7 @@ describe('SourceRegistry', () => {
 
         it('returns ERR when a provider is registered inside onProviderRegister hook', async () => {
             // Register a hook that tries to trigger nested registration
-            hookRegistry.hooks.set('onProviderRegister', [
+            hookRegistry.#hooks.set('onProviderRegister', [
                 async () => {
                     class NestedProvider {
                         id = 'nested'
@@ -171,7 +171,7 @@ describe('SourceRegistry', () => {
 
         it('runs onProviderRegister hook for each provider', async () => {
             const hookFn = vi.fn()
-            hookRegistry.hooks.set('onProviderRegister', [hookFn])
+            hookRegistry.#hooks.set('onProviderRegister', [hookFn])
 
             class HookedProvider {
                 id = 'hooked'
@@ -192,7 +192,7 @@ describe('SourceRegistry', () => {
         })
 
         it('resets #insideOnProviderRegister to false even if hook throws', async () => {
-            hookRegistry.hooks.set('onProviderRegister', [
+            hookRegistry.#hooks.set('onProviderRegister', [
                 async () => {
                     throw new Error('hook error')
                 },
@@ -226,7 +226,7 @@ describe('SourceRegistry', () => {
             }
             RegisterProvider()(AfterThrowProvider as unknown as new () => any)
 
-            hookRegistry.hooks.set('onProviderRegister', []) // clear bad hook
+            hookRegistry.#hooks.set('onProviderRegister', []) // clear bad hook
             const result = await registry.initializeProviders()
             expect(result.ok).toBe(true)
         })

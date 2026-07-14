@@ -4,7 +4,7 @@ import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 describe('HookRegistry', () => {
     it('initialises with an empty hooks Map', () => {
         const registry = new HookRegistry()
-        expect(registry.hooks.size).toBe(0)
+        expect(registry.#hooks.size).toBe(0)
     })
 
     describe('run()', () => {
@@ -16,7 +16,7 @@ describe('HookRegistry', () => {
         it('calls a single registered handler with the correct payload', async () => {
             const registry = new HookRegistry()
             const handler = vi.fn()
-            registry.hooks.set('onError', [handler])
+            registry.#hooks.set('onError', [handler])
 
             const payload = { error: new Error('boom') }
             await registry.run('onError', payload)
@@ -37,7 +37,7 @@ describe('HookRegistry', () => {
             const h3 = vi.fn(() => {
                 order.push(3)
             })
-            registry.hooks.set('onError', [h1, h2, h3])
+            registry.#hooks.set('onError', [h1, h2, h3])
 
             await registry.run('onError', { error: new Error('e') })
 
@@ -56,7 +56,7 @@ describe('HookRegistry', () => {
                 resolved.push('h2')
             })
 
-            registry.hooks.set('onError', [asyncH1, asyncH2])
+            registry.#hooks.set('onError', [asyncH1, asyncH2])
             await registry.run('onError', { error: new Error('e') })
 
             expect(resolved).toEqual(['h1', 'h2'])
@@ -65,7 +65,7 @@ describe('HookRegistry', () => {
         it('handles the onPluginRegister hook payload correctly', async () => {
             const registry = new HookRegistry()
             const handler = vi.fn()
-            registry.hooks.set('onPluginRegister', [handler])
+            registry.#hooks.set('onPluginRegister', [handler])
 
             const plugin = async () => {}
             const payload = { plugin, options: undefined }
@@ -76,7 +76,7 @@ describe('HookRegistry', () => {
 
         it('propagates errors thrown by a handler', async () => {
             const registry = new HookRegistry()
-            registry.hooks.set('onError', [
+            registry.#hooks.set('onError', [
                 vi.fn(() => {
                     throw new Error('handler error')
                 }),

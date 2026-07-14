@@ -8,6 +8,7 @@ import { OMSSResolver, ParsedOMSSId, ResolverExecutionContext, ResolverResult } 
 export abstract class BaseResolver<T> implements OMSSResolver<T> {
     /**
      * Namespace this resolver owns, e.g. "tmdb".
+     * Must be unique for a single server instance.
      */
     abstract namespace: string
 

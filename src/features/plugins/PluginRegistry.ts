@@ -1,4 +1,4 @@
-import type { OMSSConfiguredPluginType, OMSSPluginOptions, OMSSPluginType, StoredPlugin, UnknownPluginType } from '@/types/plugin.js'
+import type { OMSSConfiguredPluginType, OMSSPluginOptions, OMSSPluginType, UnknownPluginType } from '@/types/plugin.js'
 import OMSSServer from '@/core/server.js'
 import { PluginState } from '@/features/plugins/plugin-state.js'
 import { OMSSPluginError } from '@/utils/error.js'
@@ -12,12 +12,7 @@ import { ERR, OK } from '@/utils/utils.js'
  */
 export class PluginRegistry {
     /**
-     * Registered plugins and their options.
-     */
-    readonly #plugins: StoredPlugin[] = []
-
-    /**
-     * Current state of plugins.
+     * States of plugin x
      */
     readonly #states = new Map<UnknownPluginType, PluginState>()
 
@@ -69,11 +64,6 @@ export class PluginRegistry {
                 await plugin(instance, resolved)
             }
 
-            // finished executing the plugin, mark it as registered
-            this.#plugins.push({
-                plugin,
-                options,
-            })
             this.#states.set(plugin, PluginState.Registered)
             return OK(PluginState.Registered)
         } catch (err) {

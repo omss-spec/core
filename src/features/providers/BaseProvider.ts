@@ -1,5 +1,6 @@
 import { BaseResolver } from '@/features/resolvers/BaseResolver.js'
 import { OMSSProvider, ProviderResult, ProviderSourcesMeta, ResolverMetadata } from '@/types/provider.js'
+import type { ParsedOMSSId } from '@/types/resolver.js'
 
 /**
  * Base class for all providers.
@@ -9,28 +10,28 @@ export abstract class BaseProvider<P extends BaseResolver<unknown>> implements O
      * Provider ID. Must be unique.
      */
     abstract readonly id: string
+
     /**
      * Friendly name of the provider.
      */
     abstract readonly name: string
+
     /**
      * Whether the provider will be used.
      */
     abstract readonly enabled: boolean
-    /**
-     * Base URL for the provider's API.
-     */
-    abstract readonly baseUrl: string
-    /**
-     * Headers to send with every request.
-     */
-    abstract readonly headers: Record<string, string>
 
-    /** IDs that this provider supports. That are the ID values of OMSS IDs. Meaning without the namespace.
-     * @example ["12345", "67890"]
-     * @example ['*'] // for all IDs
+    /**
+     * Catalog of media this provider supports. It does not have to exist. If it does, it should be a list of media IDs.
+     * This does not get queried for source resolving, but more metadata about the provider.
      */
-    abstract readonly supportedIds: string[] | (() => string[] | Promise<string[]>)
+    readonly catalog?: string[] | (() => Promise<string[]>)
+
+    /**
+     * Provide a method that checks whether this provider supports a certain ID.
+     * @param id - Parsed OMSS ID
+     */
+    abstract readonly supportsId: (id: ParsedOMSSId) => boolean | Promise<boolean>
 
     /**
      * Resolvers that this provider supports.

@@ -19,7 +19,7 @@ describe('PluginService', () => {
         it('fires onPluginRegister hook before executing the plugin body', async () => {
             const { hookRegistry, service } = setup()
             const order: string[] = []
-            hookRegistry.hooks.set('onPluginRegister', [
+            hookRegistry.#hooks.set('onPluginRegister', [
                 vi.fn(() => {
                     order.push('hook')
                 }),
@@ -36,7 +36,7 @@ describe('PluginService', () => {
         it('passes plugin and options into the onPluginRegister payload', async () => {
             const { hookRegistry, service } = setup()
             let payload: unknown
-            hookRegistry.hooks.set('onPluginRegister', [
+            hookRegistry.#hooks.set('onPluginRegister', [
                 vi.fn((p) => {
                     payload = p
                 }),
@@ -68,7 +68,7 @@ describe('PluginService', () => {
         it('throws when register() is called from inside an onPluginRegister hook', async () => {
             const { hookRegistry, service } = setup()
             const inner = vi.fn(async () => {})
-            hookRegistry.hooks.set('onPluginRegister', [
+            hookRegistry.#hooks.set('onPluginRegister', [
                 vi.fn(async () => {
                     const res = await service.register(inner)
                     expect(res.ok).toBe(false)
@@ -81,7 +81,7 @@ describe('PluginService', () => {
         it('resets the re-entrancy guard after a hook throws', async () => {
             const { hookRegistry, service } = setup()
 
-            hookRegistry.hooks.set('onPluginRegister', [
+            hookRegistry.#hooks.set('onPluginRegister', [
                 vi.fn(() => {
                     throw new Error('hook error')
                 }),
@@ -91,7 +91,7 @@ describe('PluginService', () => {
 
             const inner = vi.fn(async () => {})
 
-            hookRegistry.hooks.set('onPluginRegister', [
+            hookRegistry.#hooks.set('onPluginRegister', [
                 vi.fn(async () => {
                     const res = await service.register(inner)
                     expect(res.ok).toBe(false)

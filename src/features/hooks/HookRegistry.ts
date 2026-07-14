@@ -4,14 +4,28 @@ import type { OMSSHooks } from '@/types/hooks.js'
  * Hook Registry
  *
  * Manages lifecycle hooks for OMSS events.
- * @typeParam THooks - A record of hook names to their handler functions.
  */
 export class HookRegistry {
     /**
      * Map storing arrays of hook handlers for each hook name.
-     * @internal
      */
-    readonly hooks = new Map<keyof OMSSHooks, unknown[]>()
+    readonly #hooks = new Map<keyof OMSSHooks, unknown[]>()
+
+    /**
+     * Get all registered hooks immutable.
+     * @dangerous - Be careful with this. what you are doing might cause side effects.
+     */
+    get hooks(): ReadonlyMap<keyof OMSSHooks, unknown[]> {
+        return this.#hooks
+    }
+
+    /**
+     * Clear all registered hooks.
+     * @dangerous - Be careful with this. Might cause side effects.
+     */
+    reset(): void {
+        return this.#hooks.clear()
+    }
 
     /**
      * Run all hooks for a lifecycle event with the provided payload.
@@ -19,13 +33,23 @@ export class HookRegistry {
      * @typeParam K - The name of the hook to run.
      * @param name - The hook name (key of THooks).
      * @param payload - The payload to pass to each hook handler.
-     * @internal
      */
     async run<K extends keyof OMSSHooks>(name: K, payload: OMSSHooks[K] extends (payload: infer P) => unknown ? P : never): Promise<void> {
-        const fns = this.hooks.get(name) ?? []
+        const fns = this.#hooks.get(name) ?? []
 
         for (const fn of fns) {
             await (fn as (payload: unknown) => void | Promise<void>)(payload)
         }
+    }
+
+    /**
+     * Add a hook handler for a lifecycle event.
+     * @param name - The hook name (key of THooks).
+     * @param cb - The hook handler function.
+     */
+    add<K extends keyof OMSSHooks>(name: K, cb: OMSSHooks[K]): void {
+        const existing = this.#hooks.get(name) ?? []
+
+        this.#hooks.set(name, [...existing, cb])
     }
 }

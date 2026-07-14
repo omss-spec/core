@@ -1,1 +1,1 @@
-export * from '@/features/providers/BaseProvider.js'
+export { BaseProvider } from '@/features/providers/BaseProvider.js'

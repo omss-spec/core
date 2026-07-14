@@ -24,7 +24,7 @@ describe('OMSSServer', () => {
 
     it('returns the config passed to the constructor', () => {
         const server = makeServer()
-        expect(server.getConfig()).toBe(baseConfig)
+        expect(server.config).toBe(baseConfig)
     })
 
     describe('decorate()', () => {

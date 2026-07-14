@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SourceService } from '@/features/source/SourceService.js'
-import { RegisterProvider, SourceRegistry } from '@/features/source/SourceRegistry.js'
+import { ProviderRegistry, RegisterProvider } from '@/features/providers/ProviderRegistry.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { OMSSServer } from '@/core/server.js'
 import { OMSSProviderError } from '@/utils/error.js'
@@ -49,13 +49,13 @@ function makeTestServer(): OMSSServer {
 
 describe('SourceService', () => {
     let hookRegistry: HookRegistry
-    let sourceRegistry: SourceRegistry
+    let sourceRegistry: ProviderRegistry
     let service: SourceService
     let server: OMSSServer
 
     beforeEach(() => {
         hookRegistry = new HookRegistry()
-        sourceRegistry = new SourceRegistry(hookRegistry)
+        sourceRegistry = new ProviderRegistry(hookRegistry)
         server = makeTestServer()
         service = new SourceService(server, sourceRegistry, hookRegistry)
     })
@@ -316,6 +316,58 @@ describe('SourceService', () => {
             if (!result.ok) expect(result.error.message).toContain('All providers failed')
         })
 
+        it('returns ERR("Operation aborted") when signal is already aborted before resolver metadata resolution starts', async () => {
+            const controller = new AbortController()
+            controller.abort()
+
+            const provider = makeProvider('p1', { namespace: 'tmdb' })
+            vi.spyOn(sourceRegistry, 'getProviders').mockReturnValue([provider])
+
+            const result = await service.getSources('tmdb:12345', { abortSignal: controller.signal })
+
+            expect(result.ok).toBe(false)
+            if (!result.ok) expect(result.error.message).toBe('Operation aborted')
+
+            expect(provider.resolver.resolve as ReturnType<typeof vi.fn>).not.toHaveBeenCalled()
+            expect(provider.getSources as ReturnType<typeof vi.fn>).not.toHaveBeenCalled()
+        })
+
+        it('returns ERR("Operation aborted") when signal is already aborted before resolver metadata resolution starts', async () => {
+            const controller = new AbortController()
+            controller.abort()
+
+            const provider = makeProvider('p1', { namespace: 'tmdb' })
+            vi.spyOn(sourceRegistry, 'getProviders').mockReturnValue([provider])
+
+            const result = await service.getSources('tmdb:12345', { abortSignal: controller.signal })
+
+            expect(result.ok).toBe(false)
+            if (!result.ok) expect(result.error.message).toBe('Operation aborted')
+
+            expect(provider.resolver.resolve as ReturnType<typeof vi.fn>).not.toHaveBeenCalled()
+            expect(provider.getSources as ReturnType<typeof vi.fn>).not.toHaveBeenCalled()
+        })
+
+        it('wraps resolver exceptions with "Resolver threw for <resolverKey>"', async () => {
+            const provider = makeProvider('p1', {
+                namespace: 'tmdb',
+                resolverName: 'boom-resolver',
+            })
+
+            ;(provider.resolver.resolve as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network exploded'))
+            vi.spyOn(sourceRegistry, 'getProviders').mockReturnValue([provider])
+
+            const result = await service.getSources('tmdb:12345')
+
+            expect(result.ok).toBe(false)
+            if (!result.ok) {
+                expect(result.error.message).toBe('All providers failed for namespace "tmdb"')
+            }
+
+            expect(provider.resolver.resolve as ReturnType<typeof vi.fn>).toHaveBeenCalledOnce()
+            expect(provider.getSources as ReturnType<typeof vi.fn>).not.toHaveBeenCalled()
+        })
+
         it('returns ERR when resolver throws', async () => {
             const provider = makeProvider('p1', { namespace: 'tmdb' })
             ;(provider.resolver.resolve as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network error'))
@@ -381,6 +433,37 @@ describe('SourceService', () => {
             const result = await service.getSources('tmdb:12345', { abortSignal: controller.signal })
             expect(result.ok).toBe(false)
             if (!result.ok) expect(result.error.message).toBe('Operation aborted')
+        })
+
+        it('ignores rejected Promise.allSettled items and still returns OK if another provider succeeds', async () => {
+            const goodProvider = makeProvider('good', {
+                namespace: 'tmdb',
+                sources: ['good-src'],
+            })
+
+            const badProvider = {
+                id: 'bad',
+                name: 'Bad',
+                enabled: true,
+                baseUrl: 'https://example.com',
+                headers: {},
+                supportedIds: ['*'],
+                resolver: makeResolver('tmdb', 'bad-resolver'),
+                get getSources() {
+                    throw new Error('explodes while building provider call')
+                },
+            } as unknown as UnknownProvider
+
+            vi.spyOn(sourceRegistry, 'getProviders').mockReturnValue([goodProvider, badProvider])
+
+            const result = await service.getSources('tmdb:12345')
+
+            expect(result.ok).toBe(true)
+            if (result.ok) {
+                expect(result.value.sources).toEqual(['good-src'])
+            }
+
+            expect(goodProvider.getSources as ReturnType<typeof vi.fn>).toHaveBeenCalledOnce()
         })
 
         it('returns ERR("Operation aborted") when aborted inside resolver execution', async () => {

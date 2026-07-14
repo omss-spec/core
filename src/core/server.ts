@@ -5,9 +5,10 @@ import { PluginService } from '@/features/plugins/PluginService.js'
 import { OMSSServerError } from '@/utils/error.js'
 import type { OMSSConfig } from '@/types/config.js'
 import { SourceService } from '@/features/source/SourceService.js'
-import { SourceRegistry } from '@/features/source/SourceRegistry.js'
+import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { ERR, OK } from '@/utils/utils.js'
 import { Result } from '@/types/utils.js'
+import { ProviderService } from '@/features/providers/ProviderService.js'
 
 /**
  * Core server class for OMSS.
@@ -15,6 +16,7 @@ import { Result } from '@/types/utils.js'
 export class OMSSServer {
     readonly hooks: HookService
     readonly plugins: PluginService
+    readonly providers: ProviderService
     readonly sources: SourceService
     readonly #config: OMSSConfig
 
@@ -28,10 +30,12 @@ export class OMSSServer {
 
         const hooksRegistry = new HookRegistry()
         const pluginRegistry = new PluginRegistry()
-        const sourceRegistry = new SourceRegistry(hooksRegistry)
+        const sourceRegistry = new ProviderRegistry()
+        const providerRegistry = new ProviderRegistry()
 
         this.hooks = new HookService(hooksRegistry)
         this.plugins = new PluginService(this, pluginRegistry, hooksRegistry)
+        this.providers = new ProviderService(providerRegistry, hooksRegistry)
         this.sources = new SourceService(this, sourceRegistry, hooksRegistry)
     }
 
@@ -39,7 +43,7 @@ export class OMSSServer {
      * Get the OMSS Config from the constructor
      * @returns the initialised OMSS Config
      */
-    getConfig(): OMSSConfig {
+    get config(): Readonly<OMSSConfig> {
         return this.#config
     }
 
