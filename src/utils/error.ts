@@ -17,7 +17,7 @@ export class OMSSError extends Error {
 }
 
 /**
- * Thrown when an error gets thrown in the OMSSServer class.
+ * Returned when an error gets Returned in the OMSSServer class.
  *
  * @example
  * return ERR(OMSSServerError('config.name must be a non-empty string', {cause: config}))
@@ -25,7 +25,7 @@ export class OMSSError extends Error {
 export class OMSSServerError extends OMSSError {}
 
 /**
- * Thrown during plugin registration or execution.
+ * Returned during plugin registration or execution.
  *
  * @example
  * return ERR(OMSSPluginError(`Plugin "${name}" is already registered`, { cause: plugin }))
@@ -33,7 +33,7 @@ export class OMSSServerError extends OMSSError {}
 export class OMSSPluginError extends OMSSError {}
 
 /**
- * Thrown during resolver registration or ID resolution.
+ * Returned during resolver registration or ID resolution.
  *
  * @example
  * return ERR(OMSSResolverError(`No resolver found for namespace "xyz"`, { cause: rawId }))
@@ -41,9 +41,17 @@ export class OMSSPluginError extends OMSSError {}
 export class OMSSResolverError extends OMSSError {}
 
 /**
- * Thrown during provider registration or source fetching.
+ * Returned during provider registration or source fetching.
  *
  * @example
  * return ERR(OMSSProviderError('Provider must have at least one resolver', { cause: provider }))
  */
 export class OMSSProviderError extends OMSSError {}
+
+/**
+ * Returned when something/several things fail during source gathering.
+ *
+ * @example
+ * return ERR(OMSSSourceGatheringError('Failed to gather sources', { cause: providerResults }))
+ */
+export class OMSSSourceGatheringError extends OMSSError {}

@@ -13,47 +13,47 @@ import {
     ResolverResult,
 } from '../src/index.js'
 
-const httpPlugin = async () => {
-    console.log('HTTP plugin loaded')
-}
-
 export interface TMDBMedia {
     id: number
     title: string
 }
 
 class TMDBResolver extends BaseResolver<TMDBMedia> {
-    namespace = 'tmd b'
+    namespace = 'tmdb'
     name = 'TMDB'
+    cacheTTL: number
 
-    async resolve(id: ParsedOMSSId, ctx: ResolverExecutionContext): Promise<ResolverResult<TMDBMedia>> {
+    constructor(cacheTTL?: number) {
+        super()
+        this.cacheTTL = cacheTTL ?? 60_000
+    }
+
+    async resolve(id: ParsedOMSSId, _ctx: ResolverExecutionContext): Promise<ResolverResult<TMDBMedia>> {
         try {
-            // Simulate an API call to TMDB
             const media = await new Promise<TMDBMedia>((resolve) => {
                 setTimeout(() => {
-                    resolve({ id: parseInt(id.value), title: 'Example Movie' })
+                    resolve({ id: parseInt(id.value, 10), title: 'Example Movie' })
                 }, 1000)
             })
+
             return OK(media)
-        } catch (e) {
+        } catch {
             return ERR(new OMSSResolverError('Failed to resolve media'))
         }
     }
 }
 
-export const resolver = new TMDBResolver()
+export const resolver = new TMDBResolver(3000)
 
 class FlixProvider extends BaseProvider<typeof resolver> {
     readonly enabled = true
     readonly id = 'flix'
     readonly name = 'Flix'
     readonly resolver = resolver
-    readonly supportsId = (id: ParsedOMSSId) => {
-        return true
-    }
+
+    readonly supportsId = (_id: ParsedOMSSId) => true
 
     async getSources(media: ProviderSourcesMeta<ResolverMetadata<typeof resolver>>): Promise<ProviderResult> {
-        // media.meta is TMDBMedia — title and id are available
         console.log(`Fetching sources for: ${media.meta.title} (id: ${media.meta.id})`)
 
         return new Promise((resolve) => {
@@ -64,10 +64,59 @@ class FlixProvider extends BaseProvider<typeof resolver> {
     }
 }
 
+type SourceCachePluginOptions = {
+    ttlMs?: number
+}
+
+/**
+ * Small source-cache plugin that caches successful getSources results.
+ */
+function sourceCachePlugin(options: SourceCachePluginOptions) {
+    const ttlMs = options.ttlMs ?? 30_000
+
+    return async (server: OMSSServer) => {
+        const cache = new Map<
+            string,
+            {
+                expiresAt: number
+                value: any
+            }
+        >()
+
+        server.sources.use('getSources', async (context, next) => {
+            const providerId = context.options.providerId
+            const cacheKey = `${context.omssId}|${providerId ?? ''}`
+            const now = Date.now()
+
+            const cached = cache.get(cacheKey)
+
+            if (cached && cached.expiresAt > now) {
+                return cached.value
+            }
+
+            if (cached) {
+                cache.delete(cacheKey)
+            }
+
+            const result = await next()
+
+            if (result.ok) {
+                cache.set(cacheKey, {
+                    expiresAt: now + ttlMs,
+                    value: result,
+                })
+            }
+
+            return result
+        })
+    }
+}
+
 const server = new OMSSServer({ name: 'example' })
 
-const res = await server.providers.register(new FlixProvider())
+const providerRegistration = await server.providers.register(new FlixProvider())
+console.assert(providerRegistration.ok === true, 'Provider registration failed')
 
-console.log(res)
+const first = await server.sources.getSources('tmd b:123')
 
-console.log('FINAL', server.providers.getAll().length)
+console.log(first)

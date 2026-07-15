@@ -30,13 +30,12 @@ export class OMSSServer {
 
         const hooksRegistry = new HookRegistry()
         const pluginRegistry = new PluginRegistry()
-        const sourceRegistry = new ProviderRegistry()
         const providerRegistry = new ProviderRegistry()
 
         this.hooks = new HookService(hooksRegistry)
         this.plugins = new PluginService(this, pluginRegistry, hooksRegistry)
         this.providers = new ProviderService(providerRegistry, hooksRegistry)
-        this.sources = new SourceService(this, sourceRegistry, hooksRegistry)
+        this.sources = new SourceService(this, providerRegistry, hooksRegistry)
     }
 
     /**

@@ -36,6 +36,10 @@ export class ProviderRegistry {
             return ERR(valResolverNamespaceReq.error)
         }
 
+        if (this.getAll().some((p) => p.resolver.namespace === provider.resolver.namespace && p.resolver !== provider.resolver)) {
+            return ERR(new OMSSProviderError(`Resolver namespace "${provider.resolver.namespace}" is already registered by another provider and another resolver. Use one resolver per namespace.`))
+        }
+
         this.#providers.set(provider.id, provider)
         return OK(provider)
     }

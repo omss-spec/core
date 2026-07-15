@@ -135,6 +135,14 @@ export default async function httpPlugin(server: OMSSServer, config: HTTPPluginC
 
 Additional plugins can be developed independently as long as they comply with the OMSS Plugin API. In the future, an official plugin registry may be introduced for both official and community-maintained plugins.
 
+### Hooks
+
+There are hooks available to hook into the OMSS lifecycle. They follow a naming pattern. More details will be added later. Try to avoid throwing and/or creating loops (some checks are in place to prevent this. not completely foolproof though).
+
+### Middleware
+
+Certain services allow for middleware to be registered. Plugins can use this to extend the functionality of the service. (i.e. caching)
+
 ### Stability
 
 The API shown above is preliminary and will likely change significantly while the framework is being designed.

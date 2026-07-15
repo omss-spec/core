@@ -64,12 +64,12 @@ export type UnknownProvider = OMSSProvider<BaseResolver<unknown>>
 /**
  * The result of a provider getSources call.
  */
-export type ProviderResult = Result<OMSSProviderResults, OMSSProviderError>
+export type ProviderResult = Result<OMSSProviderResult, OMSSProviderError>
 
 /**
  * The result of a provider getSources call if successful.
  */
-export interface OMSSProviderResults {
+export interface OMSSProviderResult {
     // TODO: define schema.
     sources: string[]
 }

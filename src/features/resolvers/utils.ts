@@ -7,7 +7,9 @@ import { ERR, OK, validateSafeUniqueString } from '@/utils/utils.js'
  * Parses an OMSS ID in the form `namespace:value`.
  */
 export function parseOMSSId(id: OMSSId): Result<ParsedOMSSId, OMSSResolverError> {
-    id = id.trim()
+    if (/\s/.test(id)) {
+        return ERR(new OMSSResolverError(`Invalid OMSS ID "${id}": cannot contain whitespace`))
+    }
 
     const idx = id.indexOf(':')
 
