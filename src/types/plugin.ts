@@ -6,7 +6,7 @@ import OMSSServer from '@/core/server.js'
 export type OMSSPluginType = (server: OMSSServer) => Promise<void>
 
 /**
- * Plugin with required configuration.
+ * Plugin with the required configuration.
  */
 export type OMSSConfiguredPluginType<T> = (server: OMSSServer, config: T) => Promise<void>
 
@@ -20,11 +20,3 @@ export type UnknownPluginType = OMSSPluginType | OMSSConfiguredPluginType<unknow
  * the server instance and returns the resolved value.
  */
 export type OMSSPluginOptions<T> = T | ((server: OMSSServer) => T)
-
-/**
- * Internal type for storing registered plugins.
- */
-export type StoredPlugin = {
-    plugin: UnknownPluginType
-    options?: unknown | ((server: OMSSServer) => unknown)
-}

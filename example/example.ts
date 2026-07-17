@@ -114,6 +114,8 @@ function sourceCachePlugin(options: SourceCachePluginOptions) {
 
 const server = new OMSSServer({ name: 'example' })
 
+server.plugins.register(sourceCachePlugin({ ttlMs: 10_000 }))
+
 const providerRegistration = await server.providers.register(new FlixProvider())
 console.assert(providerRegistration.ok === true, 'Provider registration failed')
 

@@ -19,17 +19,9 @@ export class ProviderService {
         this.#hookRegistry = hookRegistry
     }
     /**
-     * Adds a middleware to the `register` pipeline.
+     * Adds middleware to the `register` pipeline.
      * Middlewares run in insertion order, after hooks and before the
      * actual registry `add()` call.
-     *
-     * @example
-     * service.use(async (provider, next) => {
-     *   if (!isValidProvider(provider)) {
-     *     return ERR(new OMSSProviderError('Custom validation failed'))
-     *   }
-     *   return next()
-     * })
      */
     use(middleware: RegisterMiddleware): this {
         this.#registerMiddlewares.push(middleware)
@@ -38,9 +30,6 @@ export class ProviderService {
 
     /**
      * Registers a provider into the system.
-     *
-     * Runs: beforeProviderRegister hook → middlewares → registry.add()
-     * → afterProviderRegister hook (or providerRegisterFailed on error).
      */
     async register(provider: UnknownProvider): Promise<Result<UnknownProvider, OMSSProviderError>> {
         if (this.#insideBeforeProviderRegister) {
@@ -54,7 +43,7 @@ export class ProviderService {
             this.#insideBeforeProviderRegister = false
         }
 
-        // Build the middleware chain, innermost is the actual registry add
+        // Build the middleware chain; innermost is the actual registry added
         const chain = this.#buildMiddlewareChain(provider)
         const result = await chain()
 
