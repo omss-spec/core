@@ -73,3 +73,12 @@ export interface OMSSProviderResult {
     // TODO: define schema.
     sources: string[]
 }
+
+/**
+ * A middleware function for the provider `register` pipeline.
+ *
+ * Receives the provider being registered and a `next` function to call
+ * the next middleware (or the final `add` step). Return an `ERR` to
+ * short-circuit registration with a custom error.
+ */
+export type RegisterMiddleware = (provider: UnknownProvider, next: () => Promise<Result<UnknownProvider, OMSSProviderError>>) => Promise<Result<UnknownProvider, OMSSProviderError>>

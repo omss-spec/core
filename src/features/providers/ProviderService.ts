@@ -1,9 +1,9 @@
-import type { UnknownProvider } from '@/types/provider.js'
+import type { RegisterMiddleware, UnknownProvider } from '@/types/provider.js'
 import { OMSSProviderError } from '@/utils/error.js'
 import { ERR } from '@/utils/utils.js'
 import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
-import { Result } from '@/types/utils.js'
+import type { Result } from '@/types/utils.js'
 
 /**
  * The public API for managing OMSS Providers.
@@ -11,18 +11,36 @@ import { Result } from '@/types/utils.js'
 export class ProviderService {
     readonly #providerRegistry: ProviderRegistry
     readonly #hookRegistry: HookRegistry
+    readonly #registerMiddlewares: RegisterMiddleware[] = []
     #insideBeforeProviderRegister = false
 
     constructor(providerRegistry: ProviderRegistry, hookRegistry: HookRegistry) {
         this.#providerRegistry = providerRegistry
         this.#hookRegistry = hookRegistry
     }
+    /**
+     * Adds a middleware to the `register` pipeline.
+     * Middlewares run in insertion order, after hooks and before the
+     * actual registry `add()` call.
+     *
+     * @example
+     * service.use(async (provider, next) => {
+     *   if (!isValidProvider(provider)) {
+     *     return ERR(new OMSSProviderError('Custom validation failed'))
+     *   }
+     *   return next()
+     * })
+     */
+    use(middleware: RegisterMiddleware): this {
+        this.#registerMiddlewares.push(middleware)
+        return this
+    }
 
     /**
      * Registers a provider into the system.
      *
-     * @param provider - The provider instance to register.
-     * @returns `OK` with the registered provider, or `ERR` with an {@link OMSSProviderError}.
+     * Runs: beforeProviderRegister hook → middlewares → registry.add()
+     * → afterProviderRegister hook (or providerRegisterFailed on error).
      */
     async register(provider: UnknownProvider): Promise<Result<UnknownProvider, OMSSProviderError>> {
         if (this.#insideBeforeProviderRegister) {
@@ -36,7 +54,9 @@ export class ProviderService {
             this.#insideBeforeProviderRegister = false
         }
 
-        const result = this.#providerRegistry.add(provider)
+        // Build the middleware chain, innermost is the actual registry add
+        const chain = this.#buildMiddlewareChain(provider)
+        const result = await chain()
 
         if (!result.ok) {
             await this.#hookRegistry.run('providerRegisterFailed', {
@@ -74,5 +94,15 @@ export class ProviderService {
      */
     has(id: string): ReturnType<ProviderRegistry['has']> {
         return this.#providerRegistry.has(id)
+    }
+
+    /**
+     * Composes the middleware array into a single callable chain.
+     * The terminal function calls `this.#providerRegistry.add()`.
+     */
+    #buildMiddlewareChain(provider: UnknownProvider): () => Promise<Result<UnknownProvider, OMSSProviderError>> {
+        const terminal = async () => this.#providerRegistry.add(provider)
+
+        return this.#registerMiddlewares.reduceRight<() => Promise<Result<UnknownProvider, OMSSProviderError>>>((next, middleware) => () => middleware(provider, next), terminal)
     }
 }
