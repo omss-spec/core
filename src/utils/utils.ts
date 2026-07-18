@@ -1,5 +1,6 @@
 import { Result } from '@/types/utils.js'
 import { OMSSError } from '@/utils/error.js'
+import { SAFE_UNIQUE_STRING } from '@/utils/regexp.js'
 
 /**
  * Convenience factory for a successful result.
@@ -18,10 +19,6 @@ export function OK(value?: unknown) {
  * Convenience factory for a failed result.
  */
 export const ERR = <E extends Error>(error: E): Result<never, E> => ({ ok: false, error })
-/**
- * Regex for validating namespace names.
- */
-export const SAFE_UNIQUE_STRING = /^[a-z0-9-]+$/
 
 type ErrorConstructor<T extends OMSSError> = new (message: string, options?: { cause?: Error }) => T
 

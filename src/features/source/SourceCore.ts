@@ -7,6 +7,9 @@ import type { GatheredSources, GetSourcesOptions } from '@/types/source.js'
 import type { Result } from '@/types/utils.js'
 import { OMSSSourceGatheringError } from '@/utils/error.js'
 import { ERR, OK } from '@/utils/utils.js'
+import { createProviderResultEmitter } from '@/features/providers/ProviderResultEmitter.js'
+import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { ProviderHooks } from '@/types/hooks.js'
 
 /**
  * Internal source gathering core.
@@ -14,7 +17,7 @@ import { ERR, OK } from '@/utils/utils.js'
  * Handles OMSS ID parsing, provider lookup, resolver-level deduplication,
  * provider execution, and final result aggregation.
  *
- * This class intentionally does not know about hooks, middleware, or in-flight
+ * This class intentionally does not know about OMSS Hooks, middleware, or in-flight
  * request sharing. Those concerns belong to SourceService.
  */
 export class SourceCore {
@@ -31,9 +34,10 @@ export class SourceCore {
      *
      * @param omssId - Raw OMSS identifier.
      * @param opts - Optional source gathering parameters.
+     * @param providerHookRegistry - Hook registry for provider hooks.
      * @returns Aggregated provider results or a source gathering error.
      */
-    async getSources(omssId: OMSSId, opts: GetSourcesOptions): Promise<Result<GatheredSources, OMSSSourceGatheringError>> {
+    async getSources(omssId: OMSSId, opts: GetSourcesOptions, providerHookRegistry: HookRegistry<ProviderHooks>): Promise<Result<GatheredSources, OMSSSourceGatheringError>> {
         // try to parse the OMSS ID
         const parsed = parseOMSSId(omssId)
 
@@ -120,10 +124,15 @@ export class SourceCore {
                 return ERR(new OMSSSourceGatheringError('Operation aborted'))
             }
 
-            return provider.getSources({
-                omssId: parsed.value,
-                meta: metaResult.value,
-            })
+            const resultEmitter = createProviderResultEmitter(provider, providerHookRegistry)
+
+            return provider.getSources(
+                {
+                    omssId: parsed.value,
+                    meta: metaResult.value,
+                },
+                resultEmitter
+            )
         }
 
         const settled = await Promise.allSettled(providers.map((provider) => resolveForProvider(provider)))

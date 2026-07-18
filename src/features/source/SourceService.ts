@@ -8,6 +8,7 @@ import type { Result } from '@/types/utils.js'
 import { OMSSSourceGatheringError } from '@/utils/error.js'
 import { InFlightRequestPool } from '@/utils/InFlightRequestPool.js'
 import { MiddlewareRunner } from '@/utils/middleware.js'
+import type { OMSSHooks, ProviderHooks } from '@/types/hooks.js'
 
 /**
  * Public API for resolving sources for media.
@@ -17,8 +18,9 @@ import { MiddlewareRunner } from '@/utils/middleware.js'
  * gathering implementation lives in {@link SourceCore}.
  */
 export class SourceService {
-    readonly #hookRegistry: HookRegistry
+    readonly #hookRegistry: HookRegistry<OMSSHooks>
     readonly #core: SourceCore
+    readonly #providerHookRegistry: HookRegistry<ProviderHooks>
 
     /**
      * Middleware runner for SourceService operations.
@@ -30,9 +32,10 @@ export class SourceService {
      */
     readonly #inFlight = new InFlightRequestPool<string, Result<GatheredSources, OMSSSourceGatheringError>>()
 
-    constructor(omssServer: OMSSServer, providerRegistry: ProviderRegistry, hookRegistry: HookRegistry) {
+    constructor(omssServer: OMSSServer, providerRegistry: ProviderRegistry, hookRegistry: HookRegistry<OMSSHooks>, providerHookRegistry: HookRegistry<ProviderHooks>) {
         this.#hookRegistry = hookRegistry
         this.#core = new SourceCore(omssServer, providerRegistry)
+        this.#providerHookRegistry = providerHookRegistry
     }
 
     /**
@@ -81,7 +84,7 @@ export class SourceService {
 
         const inFlightKey = this.#getInFlightKey(omssId, options.providerId)
 
-        const result = await this.#inFlight.run(inFlightKey, () => this.#core.getSources(omssId, options))
+        const result = await this.#inFlight.run(inFlightKey, () => this.#core.getSources(omssId, options, this.#providerHookRegistry))
 
         if (result.ok) {
             await this.#hookRegistry.run('afterGetSources', {

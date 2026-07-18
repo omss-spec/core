@@ -1,10 +1,9 @@
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
-import type { OMSSHooks } from '@/types/hooks.js'
 
-export class HookService {
-    readonly #hookRegistry: HookRegistry
+export class HookService<T> {
+    readonly #hookRegistry: HookRegistry<T>
 
-    constructor(hookRegistry: HookRegistry) {
+    constructor(hookRegistry: HookRegistry<T>) {
         this.#hookRegistry = hookRegistry
     }
 
@@ -12,7 +11,7 @@ export class HookService {
      * Get all registered hooks immutable. TO ADD HOOKS, USE THE ADD METHOD
      * @dangerous - Be careful with this. what you are doing might cause side effects.
      */
-    get hooks(): ReadonlyMap<keyof OMSSHooks, unknown[]> {
+    get hooks(): ReadonlyMap<keyof T, unknown[]> {
         return this.#hookRegistry.hooks
     }
 
@@ -23,7 +22,7 @@ export class HookService {
      * @param name - The hook name (key of THooks).
      * @param cb - The handler function for this hook.
      */
-    add<K extends keyof OMSSHooks>(name: K, cb: OMSSHooks[K]): ReturnType<HookRegistry['add']> {
+    add<K extends keyof T>(name: K, cb: T[K]): ReturnType<HookRegistry<T>['add']> {
         this.#hookRegistry.add(name, cb)
     }
 
@@ -31,7 +30,7 @@ export class HookService {
      * Clear all registered hooks.
      * @dangerous - Be careful with this. Might cause side effects.
      */
-    reset(): ReturnType<HookRegistry['reset']> {
+    reset(): ReturnType<HookRegistry<T>['reset']> {
         return this.#hookRegistry.reset()
     }
 }

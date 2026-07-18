@@ -1,21 +1,19 @@
-import type { OMSSHooks } from '@/types/hooks.js'
-
 /**
  * Hook Registry
  *
  * Manages lifecycle hooks for OMSS events.
  */
-export class HookRegistry {
+export class HookRegistry<T> {
     /**
      * Map storing arrays of hook handlers for each hook name.
      */
-    readonly #hooks = new Map<keyof OMSSHooks, unknown[]>()
+    readonly #hooks = new Map<keyof T, unknown[]>()
 
     /**
      * Get all registered hooks immutable.
      * @dangerous - Be careful with this. what you are doing might cause side effects.
      */
-    get hooks(): ReadonlyMap<keyof OMSSHooks, unknown[]> {
+    get hooks(): ReadonlyMap<keyof T, unknown[]> {
         return this.#hooks
     }
 
@@ -34,7 +32,7 @@ export class HookRegistry {
      * @param name - The hook name (key of THooks).
      * @param payload - The payload to pass to each hook handler.
      */
-    async run<K extends keyof OMSSHooks>(name: K, payload: OMSSHooks[K] extends (payload: infer P) => unknown ? P : never): Promise<void> {
+    async run<K extends keyof T>(name: K, payload: T[K] extends (payload: infer P) => unknown ? P : never): Promise<void> {
         const fns = this.#hooks.get(name) ?? []
 
         for (const fn of fns) {
@@ -47,7 +45,7 @@ export class HookRegistry {
      * @param name - The hook name (key of THooks).
      * @param cb - The hook handler function.
      */
-    add<K extends keyof OMSSHooks>(name: K, cb: OMSSHooks[K]): void {
+    add<K extends keyof T>(name: K, cb: T[K]): void {
         const existing = this.#hooks.get(name) ?? []
 
         this.#hooks.set(name, [...existing, cb])

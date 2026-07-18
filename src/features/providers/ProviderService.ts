@@ -4,20 +4,25 @@ import { ERR } from '@/utils/utils.js'
 import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import type { Result } from '@/types/utils.js'
+import type { OMSSHooks, ProviderHooks } from '@/types/hooks.js'
+import { HookService } from '@/features/hooks/HookService.js'
 
 /**
  * The public API for managing OMSS Providers.
  */
 export class ProviderService {
+    readonly hooks: HookService<ProviderHooks>
     readonly #providerRegistry: ProviderRegistry
-    readonly #hookRegistry: HookRegistry
+    readonly #hookRegistry: HookRegistry<OMSSHooks>
     readonly #registerMiddlewares: RegisterMiddleware[] = []
     #insideBeforeProviderRegister = false
 
-    constructor(providerRegistry: ProviderRegistry, hookRegistry: HookRegistry) {
+    constructor(providerRegistry: ProviderRegistry, hookRegistry: HookRegistry<OMSSHooks>, providerHookRegistry: HookRegistry<ProviderHooks>) {
         this.#providerRegistry = providerRegistry
         this.#hookRegistry = hookRegistry
+        this.hooks = new HookService<ProviderHooks>(providerHookRegistry)
     }
+
     /**
      * Adds middleware to the `register` pipeline.
      * Middlewares run in insertion order, after hooks and before the

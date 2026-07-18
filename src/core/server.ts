@@ -9,12 +9,13 @@ import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { ERR, OK } from '@/utils/utils.js'
 import { Result } from '@/types/utils.js'
 import { ProviderService } from '@/features/providers/ProviderService.js'
+import { OMSSHooks, ProviderHooks } from '@/types/hooks.js'
 
 /**
  * Core server class for OMSS.
  */
 export class OMSSServer {
-    readonly hooks: HookService
+    readonly hooks: HookService<OMSSHooks>
     readonly plugins: PluginService
     readonly providers: ProviderService
     readonly sources: SourceService
@@ -28,14 +29,15 @@ export class OMSSServer {
     constructor(config: OMSSConfig) {
         this.#config = config
 
-        const hooksRegistry = new HookRegistry()
+        const hooksRegistry = new HookRegistry<OMSSHooks>()
+        const providerHookRegistry = new HookRegistry<ProviderHooks>()
         const pluginRegistry = new PluginRegistry()
         const providerRegistry = new ProviderRegistry()
 
-        this.hooks = new HookService(hooksRegistry)
+        this.hooks = new HookService<OMSSHooks>(hooksRegistry)
         this.plugins = new PluginService(this, pluginRegistry, hooksRegistry)
-        this.providers = new ProviderService(providerRegistry, hooksRegistry)
-        this.sources = new SourceService(this, providerRegistry, hooksRegistry)
+        this.providers = new ProviderService(providerRegistry, hooksRegistry, providerHookRegistry)
+        this.sources = new SourceService(this, providerRegistry, hooksRegistry, providerHookRegistry)
     }
 
     /**

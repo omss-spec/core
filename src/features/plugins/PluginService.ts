@@ -4,17 +4,18 @@ import type { OMSSConfiguredPluginType, OMSSPluginOptions, OMSSPluginType, Unkno
 import OMSSServer from '@/core/server.js'
 import { ERR } from '@/utils/utils.js'
 import { OMSSPluginError } from '@/utils/error.js'
+import type { OMSSHooks } from '@/types/hooks.js'
 
 /**
  * The public API for managing OMSS plugins.
  */
 export class PluginService {
     readonly #pluginRegistry: PluginRegistry
-    readonly #hookRegistry: HookRegistry
+    readonly #hookRegistry: HookRegistry<OMSSHooks>
     readonly #omssServer: OMSSServer
     #insideBeforePluginRegister = false
 
-    constructor(omssServer: OMSSServer, pluginRegistry: PluginRegistry, hookRegistry: HookRegistry) {
+    constructor(omssServer: OMSSServer, pluginRegistry: PluginRegistry, hookRegistry: HookRegistry<OMSSHooks>) {
         this.#omssServer = omssServer
         this.#pluginRegistry = pluginRegistry
         this.#hookRegistry = hookRegistry
