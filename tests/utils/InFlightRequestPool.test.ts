@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { InFlightRequestPool } from '@/utils/InFlightRequestPool.js'
 
 describe('InFlightRequestPool', () => {
@@ -70,7 +70,7 @@ describe('InFlightRequestPool', () => {
                 throw error
             })
 
-            await expect(promise).rejects.toThrow(error)
+            expect(promise).rejects.toThrow(error)
             expect(pool.has('key')).toBe(false)
         })
     })

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { ERR, OK, validateSafeUniqueString } from '@/utils/utils.js'
 import { SAFE_UNIQUE_STRING } from '@/utils/regexp.js'
 import { OMSSError, OMSSServerError } from '@/utils/error.js'
@@ -41,8 +41,10 @@ describe('validateSafeUniqueString', () => {
         const result = validateSafeUniqueString(value, 'identifier', OMSSServerError)
 
         expect(result.ok).toBe(false)
-        expect(result.error).toBeInstanceOf(OMSSError)
-        expect(result.error.message).toContain('Invalid identifier')
+        if (!result.ok) {
+            expect(result.error).toBeInstanceOf(OMSSError)
+            expect(result.error.message).toContain('Invalid identifier')
+        }
     }
 
     it('uses SAFE_UNIQUE_STRING regex for validation', () => {

@@ -1,12 +1,13 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import OMSSServer from '@/core/server.js'
 import { OMSSServerError } from '@/utils/error.js'
 import type { OMSSConfig } from '@/types/config.js'
 
-const createConfig = (overrides: Partial<OMSSConfig> = {}): OMSSConfig => ({
-    name: 'test-server',
-    ...overrides,
-} as OMSSConfig)
+const createConfig = (overrides: Partial<OMSSConfig> = {}): OMSSConfig =>
+    ({
+        name: 'test-server',
+        ...overrides,
+    }) as OMSSConfig
 
 describe('OMSSServer', () => {
     describe('constructor', () => {
@@ -43,7 +44,9 @@ describe('OMSSServer', () => {
             const result = server.decorate('myDecorator', value)
 
             expect(result.ok).toBe(true)
-            expect(result.value).toBe('myDecorator')
+            if (result.ok) {
+                expect(result.value).toBe('myDecorator')
+            }
 
             const descriptor = Object.getOwnPropertyDescriptor(server, 'myDecorator')
             expect(descriptor).toBeDefined()
@@ -62,9 +65,11 @@ describe('OMSSServer', () => {
 
             const second = server.decorate('existing', 456)
             expect(second.ok).toBe(false)
-            expect(second.error).toBeInstanceOf(OMSSServerError)
-            expect(second.error.message).toContain('Decorator "existing" already exists')
-            expect((second.error as OMSSServerError).cause).toBeDefined()
+            if (!second.ok) {
+                expect(second.error).toBeInstanceOf(OMSSServerError)
+                expect(second.error.message).toContain('Decorator "existing" already exists')
+                expect((second.error as OMSSServerError).cause).toBeDefined()
+            }
         })
 
         it('returns error when dependencies are missing', () => {
@@ -74,8 +79,10 @@ describe('OMSSServer', () => {
             const result = server.decorate('withDeps', 1, ['missingDep'])
 
             expect(result.ok).toBe(false)
-            expect(result.error).toBeInstanceOf(OMSSServerError)
-            expect(result.error.message).toContain('depends on "missingDep"')
+            if (!result.ok) {
+                expect(result.error).toBeInstanceOf(OMSSServerError)
+                expect(result.error.message).toContain('depends on "missingDep"')
+            }
         })
 
         it('succeeds when all dependencies exist', () => {
@@ -87,7 +94,7 @@ describe('OMSSServer', () => {
 
             const result = server.decorate('withDeps', 2, ['dep'])
             expect(result.ok).toBe(true)
-            expect(result.value).toBe('withDeps')
+            if (result.ok) expect(result.value).toBe('withDeps')
         })
     })
 
@@ -115,7 +122,7 @@ describe('OMSSServer', () => {
             const result = server.getDecorator<typeof value>('decorated')
 
             expect(result.ok).toBe(true)
-            expect(result.value).toBe(value)
+            if (result.ok) expect(result.value).toBe(value)
         })
 
         it('returns error when decorator does not exist', () => {
@@ -124,8 +131,10 @@ describe('OMSSServer', () => {
             const result = server.getDecorator('missing')
 
             expect(result.ok).toBe(false)
-            expect(result.error).toBeInstanceOf(OMSSServerError)
-            expect(result.error.message).toContain('Decorator "missing" not found')
+            if (!result.ok) {
+                expect(result.error).toBeInstanceOf(OMSSServerError)
+                expect(result.error.message).toContain('Decorator "missing" not found')
+            }
         })
     })
 })

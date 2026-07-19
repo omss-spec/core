@@ -2,7 +2,7 @@ import type { ParsedOMSSId } from '@/types/resolver.js'
 import type { BaseResolver } from '@/features/resolvers/BaseResolver.js'
 import type { OMSSProviderError } from '@/utils/error.js'
 import { NonEmptyArray, Result } from '@/types/utils.js'
-import { HeadersInit } from 'undici-types/fetch.js'
+
 import { MiddlewareHandler } from '@/types/middleware.js'
 
 /**
@@ -195,7 +195,7 @@ export interface BaseSource {
     /**
      * Key-value pairs of HTTP (and non-standard HTTP) headers that should be included when accessing the source URL.
      */
-    header: HeadersInit
+    header: Map<string, string>
     /**
      * Indicates if the source is streamable (true) or a direct download link (false). If false, clients must treat the URL as a download link rather than a streaming source. Download links CANNOT be used as streaming sources.
      * @see [MDN Range Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Range#:~:text=A%20server%20that%20doesn%27t%20support%20range%20requests%20may%20ignore%20the%20Range%20header%20and%20return%20the%20whole%20resource%20with%20a%20200%20status%20code.)
@@ -284,7 +284,7 @@ export interface Subtitle {
     /**
      * Key-value pairs of HTTP (and non-standard HTTP) headers that should be included when accessing the subtitle URL.
      */
-    header: HeadersInit
+    header: Map<string, string>
     /**
      * Human-readable language name for the subtitle track. default/unknown --> Unknown
      */
@@ -320,7 +320,7 @@ export interface AudioTrack {
     /**
      * Key-value pairs of HTTP (and non-standard HTTP) headers that should be included when accessing the audiotrack URL.
      */
-    header: HeadersInit
+    header: Map<string, string>
     /**
      * Human-readable language name for the audiotrack. default/unknown --> Unknown
      */

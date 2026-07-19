@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { MiddlewareRunner } from '@/utils/middleware.js'
 import type { MiddlewareOperationMap } from '@/types/middleware.js'
 
@@ -23,7 +23,7 @@ describe('MiddlewareRunner', () => {
 
     it('runs middleware chain in registration order', async () => {
         const runner = createRunner()
-        const context = { messages: [] }
+        const context: { messages: string[] } = { messages: [] }
 
         runner.use('log', async (ctx, next) => {
             ctx.messages.push('first')
@@ -45,12 +45,12 @@ describe('MiddlewareRunner', () => {
 
     it('prevents next being called multiple times', async () => {
         const runner = createRunner()
-        const context = { messages: [] }
+        const context: { messages: string[] } = { messages: [] }
 
         runner.use('log', async (ctx, next) => {
             ctx.messages.push('one')
             await next()
-            await expect(next()).rejects.toThrow('next() called multiple times')
+            expect(next()).rejects.toThrow('next() called multiple times')
             return ctx.messages
         })
 
@@ -71,6 +71,6 @@ describe('MiddlewareRunner', () => {
             throw error
         })
 
-        await expect(runner.run('log', context, async () => context.messages)).rejects.toThrow(error)
+        expect(runner.run('log', context, async () => context.messages)).rejects.toThrow(error)
     })
 })
