@@ -26,12 +26,14 @@ export interface OMSSProvider<P extends BaseResolver<unknown>> {
      * This does not get queried for source resolving, but more metadata about the provider.
      */
     readonly catalog?: () => Promise<string[]> | string[]
+    // TODO: implement the catalog
 
     /**
      * Provide a method that checks whether this provider supports a certain ID.
      * @param id - Parsed OMSS ID
      */
     readonly supportsId: (id: ParsedOMSSId) => boolean | Promise<boolean>
+    // todo: call the supports id before run
 
     /** Resolver that this provider is bound to. */
     readonly resolver: P
@@ -52,7 +54,16 @@ export type ResolverMetadata<R extends BaseResolver<unknown>> = Extract<Awaited<
  * The object passed to providers when they are executed.
  */
 export type ProviderSourcesMeta<T> = {
-    omssId: ParsedOMSSId
+    utils: {
+        /**
+         * The parsed OMSS ID of the current request.
+         */
+        omssId: ParsedOMSSId
+        /**
+         * The abort controller signal for the current request. Providers can check this to abort the request early (recommended for long running requests).
+         */
+        abortSignal: AbortSignal
+    }
     /** Metadata returned by the resolver */
     meta: T
 }
@@ -85,6 +96,7 @@ export interface OMSSProviderResult {
     errors: OMSSProviderError[]
 }
 
+// todo: maybe make abortcontroller checks in here.
 /**
  * The result object passed to the provider's getSources() method.
  */
@@ -151,6 +163,7 @@ export type ProviderResultEmitter = {
      * @param source - The source to emit
      */
     source(source: Source): void
+    // todo: remove the provider prop from the call. the emitter knows the provider already. no need to pass it again.
     /**
      * Method to emit a subtitle.
      * @param subtitle - The subtitle to emit

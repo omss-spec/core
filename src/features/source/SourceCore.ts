@@ -128,7 +128,10 @@ export class SourceCore {
 
             return provider.getSources(
                 {
-                    omssId: parsed.value,
+                    utils: {
+                        omssId: parsed.value,
+                        abortSignal: signal,
+                    },
                     meta: metaResult.value,
                 },
                 resultEmitter
@@ -141,6 +144,7 @@ export class SourceCore {
             return ERR(new OMSSSourceGatheringError('Operation aborted'))
         }
 
+        // todo: flatmap the results.
         const results: Extract<ProviderResult, { ok: true }>['value'][] = []
         const unexpectedErrors: unknown[] = []
         const omssErrors: Array<Extract<ProviderResult, { ok: false }>['error'] | OMSSSourceGatheringError> = []

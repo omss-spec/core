@@ -25,7 +25,7 @@ export abstract class BaseProvider<P extends BaseResolver<unknown>> implements O
      * Catalog of media this provider supports. It does not have to exist. If it does, it should be a list of media IDs.
      * This does not get queried for source resolving, but more metadata about the provider.
      */
-    readonly catalog?: () => Promise<string[]> | string[]
+    abstract readonly catalog?: () => Promise<string[]> | string[]
 
     /**
      * Provide a method that checks whether this provider supports a certain ID.

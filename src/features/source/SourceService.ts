@@ -64,6 +64,7 @@ export class SourceService {
      */
     async getSources(omssId: OMSSId, options: GetSourcesOptions = {}): Promise<Result<GatheredSources, OMSSSourceGatheringError>> {
         return this.#middleware.run('getSources', { omssId, options }, () => this.#internalGetSources(omssId, options))
+        // todo: add afterGetSources middleware for filtering etc.
     }
 
     /**

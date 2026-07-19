@@ -6,9 +6,10 @@ export * from '@/core/server.js'
 /**
  * Export public utilities (API's & helpers)
  */
+export * from '@/features/hooks/public-api.js'
 export * from '@/features/plugins/public-api.js'
-export * from '@/features/resolvers/public-api.js'
 export * from '@/features/providers/public-api.js'
+export * from '@/features/resolvers/public-api.js'
 export * from '@/utils/public-api.js'
 
 /**
