@@ -17,3 +17,15 @@ export const DASH_REGEX = /\bdash\b|\.(?:mpd|m4a)(?:$|[\/?#])/i
 export const MKV_REGEX = /\bmkv\b|\.mkv(?:$|[\/?#])/i
 export const VTT_REGEX = /\bvtt\b|\.vtt(?:$|[\/?#])/i
 export const SRT_REGEX = /\bsrt\b|\.srt(?:$|[\/?#])/i
+
+/**
+ * Regex for validating a single catalog entry value.
+ *
+ * A catalog entry must be either exactly `"*"` (wildcard — provider supports
+ * all IDs in the namespace) or a non-empty string with no whitespace
+ * characters (any provider-defined identifier).
+ *
+ * Mixing `"*"` with other entries in the same catalog array is not allowed
+ * and is validated separately at registration time.
+ */
+export const CATALOG_ENTRY = /^(?:\*|\S+)$/

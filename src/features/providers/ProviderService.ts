@@ -1,11 +1,12 @@
-import type { RegisterMiddleware, UnknownProvider } from '@/types/provider.js'
+import type { ProviderServiceMiddleware, ProviderServiceOperations, UnknownProvider } from '@/types/provider.js'
 import { OMSSProviderError } from '@/utils/error.js'
-import { ERR } from '@/utils/utils.js'
+import { ERR, OK } from '@/utils/utils.js'
 import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import type { Result } from '@/types/utils.js'
 import type { OMSSHooks, ProviderHooks } from '@/types/hooks.js'
 import { HookService } from '@/features/hooks/HookService.js'
+import { MiddlewareRunner } from '@/utils/middleware.js'
 
 /**
  * The public API for managing OMSS Providers.
@@ -14,7 +15,7 @@ export class ProviderService {
     readonly hooks: HookService<ProviderHooks>
     readonly #providerRegistry: ProviderRegistry
     readonly #hookRegistry: HookRegistry<OMSSHooks>
-    readonly #registerMiddlewares: RegisterMiddleware[] = []
+    readonly #middleware = new MiddlewareRunner<ProviderServiceOperations>()
     #insideBeforeProviderRegister = false
 
     constructor(providerRegistry: ProviderRegistry, hookRegistry: HookRegistry<OMSSHooks>, providerHookRegistry: HookRegistry<ProviderHooks>) {
@@ -28,8 +29,8 @@ export class ProviderService {
      * Middlewares run in insertion order, after hooks and before the
      * actual registry `add()` call.
      */
-    use(middleware: RegisterMiddleware): this {
-        this.#registerMiddlewares.push(middleware)
+    use<TMethod extends keyof ProviderServiceOperations>(method: TMethod, handler: ProviderServiceMiddleware<TMethod>): this {
+        this.#middleware.use(method, handler)
         return this
     }
 
@@ -48,9 +49,7 @@ export class ProviderService {
             this.#insideBeforeProviderRegister = false
         }
 
-        // Build the middleware chain; innermost is the actual registry added
-        const chain = this.#buildMiddlewareChain(provider)
-        const result = await chain()
+        const result = await this.#middleware.run('register', { provider }, () => this.#providerRegistry.add(provider))
 
         if (!result.ok) {
             await this.#hookRegistry.run('providerRegisterFailed', {
@@ -76,9 +75,10 @@ export class ProviderService {
 
     /**
      * Returns all registered providers.
+     * @param filter - Optional filter function to apply to providers.
      */
-    getAll(): ReturnType<ProviderRegistry['getAll']> {
-        return this.#providerRegistry.getAll()
+    getAll(filter?: (p: UnknownProvider) => boolean): ReturnType<ProviderRegistry['getAll']> {
+        return this.#providerRegistry.getAll(filter)
     }
 
     /**
@@ -91,12 +91,69 @@ export class ProviderService {
     }
 
     /**
-     * Composes the middleware array into a single callable chain.
-     * The terminal function calls `this.#providerRegistry.add()`.
+     * Returns a map of all namespaces and an array of all known identifiers for each namespace.
+     * This list is BEST EFFORT ONLY. Do not rely on this. If any provider returns a `*` automatically, the namespace will support all identifiers (e.g. `"tmdb": ["*"], "imdb": ["tt37636", "..."]`.
      */
-    #buildMiddlewareChain(provider: UnknownProvider): () => Promise<Result<UnknownProvider, OMSSProviderError>> {
-        const terminal = async () => this.#providerRegistry.add(provider)
+    async catalog(): Promise<Result<Map<string, string[]>, OMSSProviderError>> {
+        const allProviders = this.getAll()
+        const result = new Map<string, string[]>()
 
-        return this.#registerMiddlewares.reduceRight<() => Promise<Result<UnknownProvider, OMSSProviderError>>>((next, middleware) => () => middleware(provider, next), terminal)
+        await Promise.all(
+            allProviders.map(async (provider) => {
+                if (!provider.catalog) return
+
+                const namespace = provider.resolver.namespace
+                const entries = await provider.catalog()
+
+                // If namespace already collapsed to wildcard, skip.
+                if (result.get(namespace)?.[0] === '*') return
+
+                if (entries.includes('*')) {
+                    // Any single wildcard provider collapses the whole namespace.
+                    result.set(namespace, ['*'])
+                    return
+                }
+
+                // Merge deduplicated IDs into the namespace bucket.
+                const existing = result.get(namespace) ?? []
+                const merged = Array.from(new Set([...existing, ...entries]))
+                result.set(namespace, merged)
+            })
+        )
+
+        return OK(result)
+    }
+
+    /**
+     * Returns the catalog for a single namespace.
+     * Returns `undefined` if no provider in that namespace exposes a catalog.
+     *
+     * @param namespace - The resolver namespace to look up (e.g. `"tmdb"`).
+     * @returns Merged list of IDs for the namespace, `["*"]` if any provider
+     *          signals wildcard support, or `undefined` if no catalog data exists.
+     */
+    async catalogForNamespace(namespace: string): Promise<Result<string[] | undefined, OMSSProviderError>> {
+        const providers = this.getAll((p) => p.resolver.namespace === namespace)
+        if (providers.length === 0) return ERR(new OMSSProviderError(`No providers registered for namespace "${namespace}"`))
+
+        const result: string[] = []
+
+        for (const provider of providers) {
+            if (!provider.catalog) continue
+
+            const entries = await provider.catalog()
+
+            if (entries.includes('*')) {
+                return OK(['*'])
+            }
+
+            for (const id of entries) {
+                if (!result.includes(id)) {
+                    result.push(id)
+                }
+            }
+        }
+
+        return result.length > 0 ? OK(result) : OK(undefined)
     }
 }

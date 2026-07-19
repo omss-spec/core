@@ -2,6 +2,7 @@ import type { UnknownProvider } from '@/types/provider.js'
 import { OMSSProviderError } from '@/utils/error.js'
 import { ERR, OK, validateSafeUniqueString } from '@/utils/utils.js'
 import { Result } from '@/types/utils.js'
+import { CATALOG_ENTRY } from '@/utils/regexp.js'
 
 /**
  * Registry responsible for storing and managing OMSS Providers.
@@ -21,7 +22,7 @@ export class ProviderRegistry {
      * @param provider - The provider instance to register.
      * @returns `OK` if registration succeeded, `ERR` if the provider ID is already taken.
      */
-    add(provider: UnknownProvider): Result<UnknownProvider, OMSSProviderError> {
+    async add(provider: UnknownProvider): Promise<Result<UnknownProvider, OMSSProviderError>> {
         if (this.#providers.has(provider.id)) {
             return ERR(new OMSSProviderError(`Provider "${provider.id}" is already registered`))
         }
@@ -38,6 +39,22 @@ export class ProviderRegistry {
 
         if (this.getAll().some((p) => p.resolver.namespace === provider.resolver.namespace && p.resolver !== provider.resolver)) {
             return ERR(new OMSSProviderError(`Resolver namespace "${provider.resolver.namespace}" is already registered by another provider and another resolver. Use one resolver per namespace.`))
+        }
+
+        if (provider.catalog) {
+            const entries = await provider.catalog()
+            const hasWildcard = entries.includes('*')
+            const hasOther = entries.some((id) => id !== '*')
+
+            if (hasWildcard && hasOther) {
+                return ERR(new OMSSProviderError(`Provider "${provider.id}" catalog contains "*" mixed with other IDs. Use either a single "*" or a list of valid IDs.`))
+            }
+
+            for (const id of entries) {
+                if (!CATALOG_ENTRY.test(id)) {
+                    return ERR(new OMSSProviderError(`Provider "${provider.id}" catalog contains an invalid entry "${id}". Entries must be non-empty strings with no whitespace, or "*".`))
+                }
+            }
         }
 
         this.#providers.set(provider.id, provider)

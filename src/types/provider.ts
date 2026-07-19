@@ -3,6 +3,7 @@ import type { BaseResolver } from '@/features/resolvers/BaseResolver.js'
 import type { OMSSProviderError } from '@/utils/error.js'
 import { NonEmptyArray, Result } from '@/types/utils.js'
 import { HeadersInit } from 'undici-types/fetch.js'
+import { MiddlewareHandler } from '@/types/middleware.js'
 
 /**
  * Core provider interface.
@@ -25,15 +26,13 @@ export interface OMSSProvider<P extends BaseResolver<unknown>> {
      * Catalog of media this provider supports. It does not have to exist. If it does, it should be a list of media IDs.
      * This does not get queried for source resolving, but more metadata about the provider.
      */
-    readonly catalog?: () => Promise<string[]> | string[]
-    // TODO: implement the catalog
+    readonly catalog?: () => Promise<NonEmptyArray<string>> | NonEmptyArray<string>
 
     /**
      * Provide a method that checks whether this provider supports a certain ID.
      * @param id - Parsed OMSS ID
      */
     readonly supportsId: (id: ParsedOMSSId) => boolean | Promise<boolean>
-    // todo: call the supports id before run
 
     /** Resolver that this provider is bound to. */
     readonly resolver: P
@@ -96,7 +95,6 @@ export interface OMSSProviderResult {
     errors: OMSSProviderError[]
 }
 
-// todo: maybe make abortcontroller checks in here.
 /**
  * The result object passed to the provider's getSources() method.
  */
@@ -162,13 +160,12 @@ export type ProviderResultEmitter = {
      * Method to emit a source.
      * @param source - The source to emit
      */
-    source(source: Source): void
-    // todo: remove the provider prop from the call. the emitter knows the provider already. no need to pass it again.
+    source(source: Omit<Source, 'provider'>): void
     /**
      * Method to emit a subtitle.
      * @param subtitle - The subtitle to emit
      */
-    subtitle(subtitle: Subtitle): void
+    subtitle(subtitle: Omit<Subtitle, 'provider'>): void
 
     /**
      * Method to emit a fatal error. This will stop the provider from executing.
@@ -331,10 +328,25 @@ export interface AudioTrack {
 }
 
 /**
- * A middleware function for the provider `register` pipeline.
- *
- * Receives the provider being registered and a `next` function to call
- * the next middleware (or the final `add` step). Return an `ERR` to
- * short-circuit registration with a custom error.
+ * Helper types for the structure that should be passed into the emitter.
  */
-export type RegisterMiddleware = (provider: UnknownProvider, next: () => Promise<Result<UnknownProvider, OMSSProviderError>>) => Promise<Result<UnknownProvider, OMSSProviderError>>
+export type EmittedSource = Omit<SourceWithLanguages, 'provider'> | Omit<SourceWithAudioTracks, 'provider'>
+export type EmittedSubtitle = Omit<Subtitle, 'provider'>
+
+/**
+ * Methods that can be called on the ProviderService middleware.
+ */
+export type ProviderServiceOperations = {
+    /**
+     * The provider registration pipeline.
+     *
+     * Middleware runs after `beforeProviderRegister` and before
+     * ProviderRegistry.add(). Context carries the provider being registered.
+     */
+    register: {
+        context: { provider: UnknownProvider }
+        result: Result<UnknownProvider, OMSSProviderError>
+    }
+}
+
+export type ProviderServiceMiddleware<TMethod extends keyof ProviderServiceOperations> = MiddlewareHandler<ProviderServiceOperations, TMethod>

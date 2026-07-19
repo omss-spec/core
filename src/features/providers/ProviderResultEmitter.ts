@@ -1,4 +1,16 @@
-import { OMSSProviderResult, ProviderResult, ProviderResultEmitter, Source, SourceQuality, SourceTypes, Subtitle, SubtitleFormat, UnknownProvider } from '@/types/provider.js'
+import {
+    EmittedSource,
+    EmittedSubtitle,
+    OMSSProviderResult,
+    ProviderResult,
+    ProviderResultEmitter,
+    Source,
+    SourceQuality,
+    SourceTypes,
+    Subtitle,
+    SubtitleFormat,
+    UnknownProvider,
+} from '@/types/provider.js'
 import { OMSSProviderError } from '@/utils/error.js'
 import { Result } from '@/types/utils.js'
 import { ERR, OK } from '@/utils/utils.js'
@@ -243,9 +255,10 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          *
          * @param source - The fully-formed source object to emit.
          */
-        source(source: Source): void {
-            sources.push(source)
-            hookReg.run('source', { provider, source })
+        source(source: EmittedSource): void {
+            const fullSource: Source = { ...source, provider: { id: provider.id, name: provider.name } }
+            sources.push(fullSource)
+            hookReg.run('source', { provider, source: fullSource })
         },
 
         /**
@@ -260,9 +273,10 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          *
          * @param subtitle - The subtitle object to emit.
          */
-        subtitle(subtitle: Subtitle): void {
-            subtitles.push(subtitle)
-            hookReg.run('subtitle', { provider, subtitle })
+        subtitle(subtitle: EmittedSubtitle): void {
+            const fullSub = { ...subtitle, provider: { id: provider.id, name: provider.name } }
+            subtitles.push(fullSub)
+            hookReg.run('subtitle', { provider, subtitle: fullSub })
         },
 
         /**

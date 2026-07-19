@@ -1,11 +1,11 @@
 import OMSSServer from '@/core/server.js'
 import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { parseOMSSId } from '@/features/resolvers/utils.js'
-import type { ProviderResult, UnknownProvider } from '@/types/provider.js'
+import type { ProviderResult, Source, Subtitle, UnknownProvider } from '@/types/provider.js'
 import type { OMSSId, ResolverExecutionContext } from '@/types/resolver.js'
 import type { GatheredSources, GetSourcesOptions } from '@/types/source.js'
 import type { Result } from '@/types/utils.js'
-import { OMSSSourceGatheringError } from '@/utils/error.js'
+import { OMSSProviderError, OMSSSourceGatheringError } from '@/utils/error.js'
 import { ERR, OK } from '@/utils/utils.js'
 import { createProviderResultEmitter } from '@/features/providers/ProviderResultEmitter.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
@@ -114,6 +114,15 @@ export class SourceCore {
                 return ERR(new OMSSSourceGatheringError('Operation aborted'))
             }
 
+            const supportsId = await provider.supportsId(parsed.value)
+            if (!supportsId) {
+                return OK({ sources: [], subtitles: [], errors: [new OMSSProviderError(`Provider "${provider.id}" did not support this id: "${parsed.value.value}"`)] })
+            }
+
+            if (signal.aborted) {
+                return ERR(new OMSSSourceGatheringError('Operation aborted'))
+            }
+
             const metaResult = await getResolvedMeta(provider)
 
             if (!metaResult.ok) {
@@ -144,14 +153,19 @@ export class SourceCore {
             return ERR(new OMSSSourceGatheringError('Operation aborted'))
         }
 
-        // todo: flatmap the results.
-        const results: Extract<ProviderResult, { ok: true }>['value'][] = []
+        const allSources: Source[] = []
+        const allSubtitles: Subtitle[] = []
         const unexpectedErrors: unknown[] = []
         const omssErrors: Array<Extract<ProviderResult, { ok: false }>['error'] | OMSSSourceGatheringError> = []
         let hasSuccess = false
 
         for (const item of settled) {
             if (item.status === 'rejected') {
+                omssErrors.push(
+                    new OMSSSourceGatheringError(`Provider execution failed: ${item.reason instanceof Error ? item.reason.message : String(item.reason)}`, {
+                        cause: item.reason instanceof Error ? item.reason : undefined,
+                    })
+                )
                 unexpectedErrors.push(item.reason)
                 continue
             }
@@ -160,7 +174,9 @@ export class SourceCore {
 
             if (res.ok) {
                 hasSuccess = true
-                results.push(res.value)
+                allSources.push(...res.value.sources)
+                allSubtitles.push(...res.value.subtitles)
+                omssErrors.push(...res.value.errors)
                 continue
             }
 
@@ -176,7 +192,8 @@ export class SourceCore {
         }
 
         return OK({
-            results,
+            sources: allSources,
+            subtitles: allSubtitles,
             errors: omssErrors,
         })
     }

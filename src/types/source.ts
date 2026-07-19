@@ -1,6 +1,6 @@
 import { OMSSId } from '@/types/resolver.js'
 import { Result } from '@/types/utils.js'
-import { OMSSProviderResult } from '@/types/provider.js'
+import { Source, Subtitle } from '@/types/provider.js'
 import { OMSSError, OMSSSourceGatheringError } from '@/utils/error.js'
 import { MiddlewareHandler } from '@/types/middleware.js'
 
@@ -16,18 +16,36 @@ export type GetSourcesOptions = {
  * Object returned by the SourceService.GetSources() method if there has been at least one successful provider.
  */
 export type GatheredSources = {
-    results: OMSSProviderResult[]
+    /**
+     * Array of sources.
+     */
+    sources: Source[]
+    /**
+     * Array of subtitle tracks.
+     */
+    subtitles: Subtitle[]
+    /**
+     * Array of errors.
+     */
     errors: OMSSError[]
 }
 
 /**
- * Operations supported by the SourceService Middleware Runner
+ * Operations supported by the SourceService Middleware Runner with the according context and result types.
  */
 export type SourceServiceOperations = {
     getSources: {
         context: {
             omssId: OMSSId
             options: GetSourcesOptions
+        }
+        result: Result<GatheredSources, OMSSSourceGatheringError>
+    }
+    afterGetSources: {
+        context: {
+            omssId: OMSSId
+            options: GetSourcesOptions
+            result: Result<GatheredSources, OMSSSourceGatheringError>
         }
         result: Result<GatheredSources, OMSSSourceGatheringError>
     }
