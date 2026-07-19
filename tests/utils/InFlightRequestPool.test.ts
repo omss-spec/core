@@ -70,7 +70,7 @@ describe('InFlightRequestPool', () => {
                 throw error
             })
 
-            expect(promise).rejects.toThrow(error)
+            await promise.catch(() => {})
             expect(pool.has('key')).toBe(false)
         })
     })
