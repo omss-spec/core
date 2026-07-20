@@ -1,19 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { InFlightRequestPool } from '@/utils/InFlightRequestPool.js'
+import { createAsyncDeduper } from '../utils.js'
 
-describe('InFlightRequestPool', () => {
-    const createPool = () => new InFlightRequestPool<string, number>()
-
+describe('AsyncDeduper', () => {
     describe('get and has', () => {
         it('returns undefined and false when no entry exists', () => {
-            const pool = createPool()
+            const pool = createAsyncDeduper()
 
             expect(pool.get('key')).toBeUndefined()
             expect(pool.has('key')).toBe(false)
         })
 
         it('reflects in-flight promise presence', async () => {
-            const pool = createPool()
+            const pool = createAsyncDeduper()
             const promise = pool.run('key', async () => 1)
 
             expect(pool.get('key')).toBe(promise)
@@ -25,7 +23,7 @@ describe('InFlightRequestPool', () => {
 
     describe('run', () => {
         it('reuses existing in-flight promise for same key', async () => {
-            const pool = createPool()
+            const pool = createAsyncDeduper()
             let factoryCalls = 0
 
             const factory = async () => {
@@ -45,7 +43,7 @@ describe('InFlightRequestPool', () => {
         })
 
         it('starts a new promise once previous has settled and entry removed', async () => {
-            const pool = createPool()
+            const pool = createAsyncDeduper()
             let factoryCalls = 0
 
             const factory = async () => {
@@ -63,7 +61,7 @@ describe('InFlightRequestPool', () => {
         })
 
         it('removes entry when promise rejects', async () => {
-            const pool = createPool()
+            const pool = createAsyncDeduper()
             const error = new Error('fail')
 
             const promise = pool.run('key', async () => {
@@ -77,7 +75,7 @@ describe('InFlightRequestPool', () => {
 
     describe('delete and clear', () => {
         it('delete removes a single key and returns true when existed', async () => {
-            const pool = createPool()
+            const pool = createAsyncDeduper()
             await pool.run('key', async () => 1)
 
             // manually keep in-flight entry
@@ -92,7 +90,7 @@ describe('InFlightRequestPool', () => {
         })
 
         it('clear removes all keys', async () => {
-            const pool = createPool()
+            const pool = createAsyncDeduper()
             await pool.run('a', async () => 1)
             await pool.run('b', async () => 2)
 

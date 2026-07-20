@@ -43,24 +43,42 @@ describe('validateSafeUniqueString', () => {
         expect(result.ok).toBe(false)
         if (!result.ok) {
             expect(result.error).toBeInstanceOf(OMSSError)
-            expect(result.error.message).toContain('Invalid identifier')
+            expect(result.error.message).toBe(`Invalid identifier "${value}". Expected only letters (lowercase), numbers, and hyphens.`)
         }
     }
 
     it('uses SAFE_UNIQUE_STRING regex for validation', () => {
         expect(SAFE_UNIQUE_STRING.test('valid-id-123')).toBe(true)
+        expect(SAFE_UNIQUE_STRING.test('0-test')).toBe(true)
+        expect(SAFE_UNIQUE_STRING.test('')).toBe(false)
         expect(SAFE_UNIQUE_STRING.test('INVALID')).toBe(false)
+        expect(SAFE_UNIQUE_STRING.test('with space')).toBe(false)
     })
 
     it('returns OK for valid identifiers', () => {
+        assertOk('a')
         assertOk('abc')
+        assertOk('123')
         assertOk('abc-123')
         assertOk('a1-b2-c3')
+        assertOk('0-test-9')
     })
 
-    it('returns ERR for invalid identifiers (uppercase, spaces, special chars)', () => {
+    it('returns ERR for invalid identifiers', () => {
+        assertErr('')
         assertErr('ABC')
+        assertErr('Abc')
         assertErr('with space')
+        assertErr(' leading')
+        assertErr('trailing ')
+        assertErr('line\nbreak')
+        assertErr('tab\tcharacter')
+        assertErr('under_score')
+        assertErr('dot.name')
+        assertErr('slash/name')
+        assertErr('colon:name')
         assertErr('invalid!')
+        assertErr('😀')
+        assertErr('äbc')
     })
 })

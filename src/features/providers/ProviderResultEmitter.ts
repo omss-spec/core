@@ -17,6 +17,7 @@ import { ERR, OK } from '@/utils/utils.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { ProviderHooks } from '@/types/hooks.js'
 import { DASH_REGEX, HLS_REGEX, MKV_REGEX, MP4_REGEX, SRT_REGEX, VTT_REGEX } from '@/utils/regexp.js'
+import { CleaningFunction } from '@/types/source.js'
 
 /**
  * Creates a fresh `ProviderResultEmitter` instance scoped to a single
@@ -29,10 +30,11 @@ import { DASH_REGEX, HLS_REGEX, MKV_REGEX, MP4_REGEX, SRT_REGEX, VTT_REGEX } fro
  *
  * @param provider - The provider instance for which this emitter is being created.
  * @param hookReg - The hook registry instance for managing hooks.
+ * @param cleaningFunc - A function to clean up source/subtitle URLs and headers.
  * @returns A new `ProviderResultEmitter` bound to this execution.
  *
  */
-export function createProviderResultEmitter(provider: Readonly<UnknownProvider>, hookReg: HookRegistry<ProviderHooks>): ProviderResultEmitter {
+export function createProviderResultEmitter(provider: Readonly<UnknownProvider>, hookReg: HookRegistry<ProviderHooks>, cleaningFunc: CleaningFunction): ProviderResultEmitter {
     /**
      * Accumulated sources emitted via `source()` during this execution.
      * Flushed into the final result when `done()` is called.
@@ -201,6 +203,10 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          * @param data - Arbitrary payload associated with the event.
          */
         emit(action: string, data: unknown): void {
+            // action cannot be whitespace or another hook name
+            if (/\s/.test(action) || Object.keys(this).includes(action)) {
+                return
+            }
             hookReg.run(action, { data, provider })
         },
 
@@ -256,24 +262,68 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          * @param source - The fully-formed source object to emit.
          */
         source(source: EmittedSource): void {
-            const fullSource: Source = { ...source, provider: { id: provider.id, name: provider.name } }
+            const cleanedSource = {
+                ...source,
+            }
+
+            const cleaned = cleaningFunc({
+                url: cleanedSource.url,
+                header: cleanedSource.header,
+            })
+
+            cleanedSource.url = cleaned.url
+            cleanedSource.header = cleaned.header
+
+            if ('audioTracks' in cleanedSource && cleanedSource.audioTracks) {
+                // had to split first and rest, since audioTracks requires least one track.
+                const [first, ...rest] = cleanedSource.audioTracks
+
+                cleanedSource.audioTracks = [
+                    {
+                        ...first,
+                        ...cleaningFunc({
+                            url: first.url,
+                            header: first.header,
+                        }),
+                    },
+                    ...rest.map((track) => ({
+                        ...track,
+                        ...cleaningFunc({
+                            url: track.url,
+                            header: track.header,
+                        }),
+                    })),
+                ]
+            }
+            const fullSource: Source = {
+                ...cleanedSource,
+                provider: {
+                    id: provider.id,
+                    name: provider.name,
+                },
+            }
+
             sources.push(fullSource)
-            hookReg.run('source', { provider, source: fullSource })
+
+            hookReg.run('source', {
+                provider,
+                source: fullSource,
+            })
         },
 
         /**
          * Emits a single subtitle track.
          *
-         * @remarks
-         * Subtitles are NOT associated with any specific `Source` or
-         * `AudioTrack` — they exist independently in the flat `subtitles`
-         * array of the final result. Clients are responsible for matching
-         * subtitles to whichever source/audio track combination the user
-         * selects.
-         *
          * @param subtitle - The subtitle object to emit.
          */
         subtitle(subtitle: EmittedSubtitle): void {
+            const obj = {
+                url: subtitle.url,
+                header: subtitle.header,
+            }
+            const { url, header } = cleaningFunc(obj)
+            subtitle.url = url
+            subtitle.header = header
             const fullSub = { ...subtitle, provider: { id: provider.id, name: provider.name } }
             subtitles.push(fullSub)
             hookReg.run('subtitle', { provider, subtitle: fullSub })

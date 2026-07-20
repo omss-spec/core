@@ -10,6 +10,7 @@ import { MiddlewareHandler } from '@/types/middleware.js'
 export type GetSourcesOptions = {
     providerId?: string
     abortSignal?: AbortSignal
+    cleaningFunction?: CleaningFunction
 }
 
 /**
@@ -55,3 +56,15 @@ export type SourceServiceOperations = {
  * Middleware function for the SourceService
  */
 export type SourceServiceMiddleware<TMethod extends keyof SourceServiceOperations> = MiddlewareHandler<SourceServiceOperations, TMethod>
+
+/**
+ * Function to clean a source.
+ *
+ * This function will be called between a source is registered (in the ResultEmitter) and the source is emitted.
+ */
+export type ObjectToClean = {
+    url: string
+    header: Record<string, string>
+}
+
+export type CleaningFunction = (obj: ObjectToClean) => ObjectToClean

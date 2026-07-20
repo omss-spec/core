@@ -4,6 +4,7 @@ import type { OMSSProviderError } from '@/utils/error.js'
 import { NonEmptyArray, Result } from '@/types/utils.js'
 
 import { MiddlewareHandler } from '@/types/middleware.js'
+import { ExtractorService } from '@/features/extractors/ExtractorService.js'
 
 /**
  * Core provider interface.
@@ -38,10 +39,10 @@ export interface OMSSProvider<P extends BaseResolver<unknown>> {
     readonly resolver: P
 
     /**
-     * Fetch sources for a certain media.
-     * The shape of `media.meta` is derived from the resolver's resolve() return type.
+     * Fetch sources for a certain request.
+     * The shape of `request.meta` is derived from the resolver's resolve() return type.
      */
-    getSources(media: ProviderSourcesMeta<ResolverMetadata<P>>, result: ProviderResultEmitter): Promise<ProviderResult>
+    getSources(request: ProviderSourcesMeta<ResolverMetadata<P>>, result: ProviderResultEmitter): Promise<ProviderResult>
 }
 
 /**
@@ -62,6 +63,11 @@ export type ProviderSourcesMeta<T> = {
          * The abort controller signal for the current request. Providers can check this to abort the request early (recommended for long running requests).
          */
         abortSignal: AbortSignal
+        /**
+         * A function to find an extractor by whatever the extractor service is configured to use.
+         * @param args - Arguments to pass to the extractor service's find() method.'
+         */
+        findExtractor: (...args: Parameters<ExtractorService['find']>) => ReturnType<ExtractorService['find']>
     }
     /** Metadata returned by the resolver */
     meta: T
@@ -195,7 +201,7 @@ export interface BaseSource {
     /**
      * Key-value pairs of HTTP (and non-standard HTTP) headers that should be included when accessing the source URL.
      */
-    header: Map<string, string>
+    header: Record<string, string>
     /**
      * Indicates if the source is streamable (true) or a direct download link (false). If false, clients must treat the URL as a download link rather than a streaming source. Download links CANNOT be used as streaming sources.
      * @see [MDN Range Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Range#:~:text=A%20server%20that%20doesn%27t%20support%20range%20requests%20may%20ignore%20the%20Range%20header%20and%20return%20the%20whole%20resource%20with%20a%20200%20status%20code.)
@@ -284,7 +290,7 @@ export interface Subtitle {
     /**
      * Key-value pairs of HTTP (and non-standard HTTP) headers that should be included when accessing the subtitle URL.
      */
-    header: Map<string, string>
+    header: Record<string, string>
     /**
      * Human-readable language name for the subtitle track. default/unknown --> Unknown
      */
@@ -320,7 +326,7 @@ export interface AudioTrack {
     /**
      * Key-value pairs of HTTP (and non-standard HTTP) headers that should be included when accessing the audiotrack URL.
      */
-    header: Map<string, string>
+    header: Record<string, string>
     /**
      * Human-readable language name for the audiotrack. default/unknown --> Unknown
      */

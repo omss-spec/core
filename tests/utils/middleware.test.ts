@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { MiddlewareRunner } from '@/utils/middleware.js'
 import type { MiddlewareOperationMap } from '@/types/middleware.js'
+import { createRunner } from '../utils.js'
 
 interface TestOperations extends MiddlewareOperationMap {
     log: {
@@ -10,10 +10,8 @@ interface TestOperations extends MiddlewareOperationMap {
 }
 
 describe('MiddlewareRunner', () => {
-    const createRunner = () => new MiddlewareRunner<TestOperations>()
-
     it('executes final handler when there is no middleware', async () => {
-        const runner = createRunner()
+        const runner = createRunner<TestOperations>()
         const context = { messages: ['a'] }
 
         const result = await runner.run('log', context, async () => context.messages)
@@ -22,7 +20,7 @@ describe('MiddlewareRunner', () => {
     })
 
     it('runs middleware chain in registration order', async () => {
-        const runner = createRunner()
+        const runner = createRunner<TestOperations>()
         const context: { messages: string[] } = { messages: [] }
 
         runner.use('log', async (ctx, next) => {
@@ -44,7 +42,7 @@ describe('MiddlewareRunner', () => {
     })
 
     it('prevents next being called multiple times', async () => {
-        const runner = createRunner()
+        const runner = createRunner<TestOperations>()
         const context: { messages: string[] } = { messages: [] }
 
         runner.use('log', async (ctx, next) => {
@@ -63,7 +61,7 @@ describe('MiddlewareRunner', () => {
     })
 
     it('propagates errors thrown in middleware', async () => {
-        const runner = createRunner()
+        const runner = createRunner<TestOperations>()
         const context = { messages: [] }
         const error = new Error('middleware failed')
 

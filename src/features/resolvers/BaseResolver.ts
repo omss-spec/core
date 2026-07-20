@@ -1,4 +1,5 @@
-import { OMSSResolver, ParsedOMSSId, ResolverExecutionContext, ResolverResult } from '@/types/resolver.js'
+import { OMSSResolverError, Result } from '@/public-api.js'
+import { OMSSId, OMSSResolver, ParsedOMSSId, ResolverExecutionContext, ResolverResult } from '@/types/resolver.js'
 
 /**
  * Base class for all OMSS resolvers.
@@ -16,6 +17,14 @@ export abstract class BaseResolver<T> implements OMSSResolver<T> {
      * Human-readable resolver name.
      */
     abstract name: string
+
+    /**
+     * A map of ID converters.
+     *
+     * @key - The unhandled namespace
+     * @value - A function that converts that id (from an unknown namespace/id provider) to this resolver's namespace.
+     */
+    abstract converter: Map<string, (noHandlerId: OMSSId, ctx: ResolverExecutionContext) => Promise<Result<OMSSId, OMSSResolverError>>>
 
     /**
      * Resolve a single ID into metadata.

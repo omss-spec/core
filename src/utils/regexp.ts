@@ -1,7 +1,8 @@
 /**
  * Regex for validating namespace names.
  */
-export const SAFE_UNIQUE_STRING = /^[a-z0-9-]+$/
+const SAFE_UNIQUE_STRING_PATTERN = '[a-z0-9-]+'
+export const SAFE_UNIQUE_STRING = new RegExp(`^${SAFE_UNIQUE_STRING_PATTERN}$`)
 
 /**
  * Regex for matching media formats by keyword or file extension.
@@ -22,10 +23,9 @@ export const SRT_REGEX = /\bsrt\b|\.srt(?:$|[\/?#])/i
  * Regex for validating a single catalog entry value.
  *
  * A catalog entry must be either exactly `"*"` (wildcard — provider supports
- * all IDs in the namespace) or a non-empty string with no whitespace
- * characters (any provider-defined identifier).
+ * all IDs in the namespace) or a safe unique string.
  *
  * Mixing `"*"` with other entries in the same catalog array is not allowed
  * and is validated separately at registration time.
  */
-export const CATALOG_ENTRY = /^(?:\*|\S+)$/
+export const CATALOG_ENTRY = new RegExp(`^(?:\\*|${SAFE_UNIQUE_STRING_PATTERN})$`)

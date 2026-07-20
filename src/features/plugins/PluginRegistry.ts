@@ -15,25 +15,29 @@ export class PluginRegistry {
      * States of plugin x
      */
     readonly #states = new Map<UnknownPluginType, PluginState>()
+    readonly #server: OMSSServer
 
     /**
      * Registration stack used for circular dependency detection.
      */
     readonly #stack: UnknownPluginType[] = []
 
-    async add(instance: OMSSServer, plugin: OMSSPluginType): Promise<Result<PluginState.Registered, OMSSPluginError>>
+    constructor(server: OMSSServer) {
+        this.#server = server
+    }
 
-    async add<T>(instance: OMSSServer, plugin: OMSSConfiguredPluginType<T>, options: OMSSPluginOptions<T>): Promise<Result<PluginState.Registered, OMSSPluginError>>
+    async add(plugin: OMSSPluginType): Promise<Result<PluginState.Registered, OMSSPluginError>>
+
+    async add<T>(plugin: OMSSConfiguredPluginType<T>, options: OMSSPluginOptions<T>): Promise<Result<PluginState.Registered, OMSSPluginError>>
 
     /**
      * Adds and runs a plugin with its options.
      *
      * @typeParam T - Plugin options type.
-     * @param instance - The server instance to pass to the plugin.
      * @param plugin - The plugin function to register.
      * @param options - Plugin options or a factory function that resolves options.
      */
-    async add(instance: OMSSServer, plugin: UnknownPluginType, options?: unknown): Promise<Result<PluginState.Registered, OMSSPluginError>> {
+    async add(plugin: UnknownPluginType, options?: unknown): Promise<Result<PluginState.Registered, OMSSPluginError>> {
         // Check whether this plugin is already known
         const state = this.#states.get(plugin)
 
@@ -52,16 +56,16 @@ export class PluginRegistry {
         this.#stack.push(plugin)
 
         // Build options if a factory function is provided
-        const resolved = typeof options === 'function' ? (options as (server: OMSSServer) => unknown)(instance) : options
+        const resolved = typeof options === 'function' ? (options as (server: OMSSServer) => unknown)(this.#server) : options
 
         try {
             // Check if the plugin has a single argument
             if (plugin.length === 1) {
                 // execute the plugin with the server instance
-                await (plugin as OMSSPluginType)(instance)
+                await (plugin as OMSSPluginType)(this.#server)
             } else {
                 // execute the plugin with the server instance and resolved options
-                await plugin(instance, resolved)
+                await plugin(this.#server, resolved)
             }
 
             this.#states.set(plugin, PluginState.Registered)
@@ -77,7 +81,7 @@ export class PluginRegistry {
     /**
      * Get the current plugin state.
      */
-    getState(plugin: UnknownPluginType): PluginState {
-        return this.#states.get(plugin) ?? PluginState.Unavailable
+    getState<T>(plugin: UnknownPluginType | OMSSPluginType | OMSSConfiguredPluginType<T>): PluginState {
+        return this.#states.get(plugin as UnknownPluginType) ?? PluginState.Unavailable
     }
 }

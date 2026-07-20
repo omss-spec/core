@@ -8,7 +8,7 @@
  * @typeParam TKey - Cache key type.
  * @typeParam TValue - Promise resolution type.
  */
-export class InFlightRequestPool<TKey, TValue> {
+export class AsyncDeduper<TKey, TValue> {
     readonly #entries = new Map<TKey, Promise<TValue>>()
 
     /**

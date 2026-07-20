@@ -2,13 +2,14 @@ import OMSSServer from '@/core/server.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { SourceCore } from '@/features/source/SourceCore.js'
-import type { GatheredSources, GetSourcesOptions, SourceServiceMiddleware, SourceServiceOperations } from '@/types/source.js'
+import type { CleaningFunction, GatheredSources, GetSourcesOptions, SourceServiceMiddleware, SourceServiceOperations } from '@/types/source.js'
 import type { OMSSId } from '@/types/resolver.js'
 import type { Result } from '@/types/utils.js'
 import { OMSSSourceGatheringError } from '@/utils/error.js'
-import { InFlightRequestPool } from '@/utils/InFlightRequestPool.js'
+import { AsyncDeduper } from '@/utils/AsyncDeduper.js'
 import { MiddlewareRunner } from '@/utils/middleware.js'
 import type { OMSSHooks, ProviderHooks } from '@/types/hooks.js'
+import { ExtractorService } from '@/features/extractors/ExtractorService.js'
 
 /**
  * Public API for resolving sources for media.
@@ -30,12 +31,26 @@ export class SourceService {
     /**
      * Deduplicates concurrent getSources requests by request key.
      */
-    readonly #inFlight = new InFlightRequestPool<string, Result<GatheredSources, OMSSSourceGatheringError>>()
+    readonly #inFlight = new AsyncDeduper<string, Result<GatheredSources, OMSSSourceGatheringError>>()
 
-    constructor(omssServer: OMSSServer, providerRegistry: ProviderRegistry, hookRegistry: HookRegistry<OMSSHooks>, providerHookRegistry: HookRegistry<ProviderHooks>) {
+    constructor(
+        omssServer: OMSSServer,
+        providerRegistry: ProviderRegistry,
+        hookRegistry: HookRegistry<OMSSHooks>,
+        providerHookRegistry: HookRegistry<ProviderHooks>,
+        extractorService: ExtractorService
+    ) {
         this.#hookRegistry = hookRegistry
-        this.#core = new SourceCore(omssServer, providerRegistry)
+        this.#core = new SourceCore(omssServer, providerRegistry, extractorService)
         this.#providerHookRegistry = providerHookRegistry
+    }
+
+    public get cleaningFunction(): CleaningFunction {
+        return this.#cleaningFunction
+    }
+
+    public set cleaningFunction(fn: CleaningFunction) {
+        this.#cleaningFunction = fn
     }
 
     /**
@@ -67,6 +82,11 @@ export class SourceService {
     }
 
     /**
+     * Get and set the cleaning function for the source core.
+     */
+    #cleaningFunction: CleaningFunction = (obj) => obj
+
+    /**
      * Internal wrapper around source gathering.
      *
      * Runs lifecycle hooks and deduplicates concurrent requests before
@@ -84,7 +104,7 @@ export class SourceService {
 
         const inFlightKey = this.#getInFlightKey(omssId, options.providerId)
 
-        const result = await this.#inFlight.run(inFlightKey, () => this.#core.getSources(omssId, options, this.#providerHookRegistry))
+        const result = await this.#inFlight.run(inFlightKey, () => this.#core.getSources(omssId, options, this.#providerHookRegistry, options.cleaningFunction ?? this.cleaningFunction))
 
         if (result.ok) {
             await this.#hookRegistry.run('afterGetSources', {

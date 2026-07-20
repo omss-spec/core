@@ -49,6 +49,14 @@ export class OMSSResolverError extends OMSSError {}
 export class OMSSProviderError extends OMSSError {}
 
 /**
+ * Returned when an extractor fails to extract the media from a host.
+ *
+ * @example
+ * return ERR(OMSSExtractor('Failed to extract media from host due to host changes', { cause: html }))
+ */
+export class OMSSExtractorError extends OMSSError {}
+
+/**
  * Returned when something/several things fail during source gathering.
  *
  * @example

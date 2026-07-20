@@ -5,7 +5,7 @@ import { Result } from '@/types/utils.js'
 /**
  * Canonical OMSS ID representation.
  *
- * The raw string follows the `namespace:value` convention (e.g. "tmdb:12345").
+ * The raw string follows the `<namespace>:<value_1>:<value_2>:(...):<value_n>` format and the certain id's/namespaces are standardized by OMSS.
  */
 export type OMSSId = string
 
@@ -18,9 +18,9 @@ export interface ParsedOMSSId {
      */
     namespace: string
     /**
-     * The ID-provider-owned value
+     * The ID-values
      */
-    value: string
+    values: string[]
     /**
      * The original raw ID string
      */
@@ -61,6 +61,14 @@ export interface OMSSResolver<TMetadata> {
      * Human-readable resolver name.
      */
     name: string
+
+    /**
+     * A map of ID converters.
+     *
+     * @key - The unhandled namespace
+     * @value - A function that converts that id (from an unknown namespace/id provider) to this resolver's namespace.
+     */
+    converter: Map<string, (noHandlerId: OMSSId, ctx: ResolverExecutionContext) => Promise<Result<OMSSId, OMSSResolverError>>>
 
     /**
      * Resolve a single ID into metadata.

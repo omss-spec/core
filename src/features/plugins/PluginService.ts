@@ -12,11 +12,9 @@ import type { OMSSHooks } from '@/types/hooks.js'
 export class PluginService {
     readonly #pluginRegistry: PluginRegistry
     readonly #hookRegistry: HookRegistry<OMSSHooks>
-    readonly #omssServer: OMSSServer
     #insideBeforePluginRegister = false
 
     constructor(omssServer: OMSSServer, pluginRegistry: PluginRegistry, hookRegistry: HookRegistry<OMSSHooks>) {
-        this.#omssServer = omssServer
         this.#pluginRegistry = pluginRegistry
         this.#hookRegistry = hookRegistry
     }
@@ -51,7 +49,7 @@ export class PluginService {
             this.#insideBeforePluginRegister = false
         }
 
-        const result = await this.#pluginRegistry.add(this.#omssServer, plugin, options)
+        const result = await this.#pluginRegistry.add(plugin, options)
 
         if (!result.ok) {
             await this.#hookRegistry.run('pluginRegisterFailed', { plugin, options, error: result.error })

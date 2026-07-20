@@ -33,5 +33,5 @@ export function validateSafeUniqueString<T extends OMSSError>(value: string, nam
         return ERR(new ErrorType(`Invalid ${name} "${value}". Expected only letters (lowercase), numbers, and hyphens.`))
     }
 
-    return OK(undefined)
+    return OK()
 }

@@ -1,7 +1,7 @@
 {
     "name": "@omss/core",
     "version": "0.0.1",
-    "description": "Official lightweight TypeScript runtime and plugin orchestrator to create OMSS backends!",
+    "description": "Official TypeScript runtime and plugin orchestrator to create all kinds of OMSS based services!",
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",

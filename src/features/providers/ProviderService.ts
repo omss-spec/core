@@ -132,7 +132,7 @@ export class ProviderService {
      * @returns Merged list of IDs for the namespace, `["*"]` if any provider
      *          signals wildcard support, or `undefined` if no catalog data exists.
      */
-    async catalogForNamespace(namespace: string): Promise<Result<string[] | undefined, OMSSProviderError>> {
+    async catalogForNamespace(namespace: string): Promise<Result<string[], OMSSProviderError>> {
         const providers = this.getAll((p) => p.resolver.namespace === namespace)
         if (providers.length === 0) return ERR(new OMSSProviderError(`No providers registered for namespace "${namespace}"`))
 
@@ -154,6 +154,6 @@ export class ProviderService {
             }
         }
 
-        return result.length > 0 ? OK(result) : OK(undefined)
+        return result.length > 0 ? OK(result) : ERR(new OMSSProviderError(`No catalog data available for namespace "${namespace}"`))
     }
 }

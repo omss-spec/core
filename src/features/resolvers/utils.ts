@@ -4,21 +4,24 @@ import { Result } from '@/types/utils.js'
 import { ERR, OK, validateSafeUniqueString } from '@/utils/utils.js'
 
 /**
- * Parses an OMSS ID in the form `namespace:value`.
+ * Parses an OMSS ID in the form `namespace:value_1[:value_2[:...]]`.
  */
 export function parseOMSSId(id: OMSSId): Result<ParsedOMSSId, OMSSResolverError> {
     if (/\s/.test(id)) {
         return ERR(new OMSSResolverError(`Invalid OMSS ID "${id}": cannot contain whitespace`))
     }
 
-    const idx = id.indexOf(':')
+    const parts = id.split(':')
 
-    if (idx === -1) {
+    if (parts.length < 2) {
         return ERR(new OMSSResolverError(`Invalid OMSS ID "${id}": missing namespace separator ":"`))
     }
 
-    const namespace = id.slice(0, idx)
-    const value = id.slice(idx + 1)
+    const [namespace, ...values] = parts
+
+    if (!namespace) {
+        return ERR(new OMSSResolverError(`Invalid OMSS ID "${id}": namespace cannot be empty`))
+    }
 
     const req = validateSafeUniqueString(namespace, 'OMSS namespace', OMSSResolverError)
 
@@ -26,13 +29,17 @@ export function parseOMSSId(id: OMSSId): Result<ParsedOMSSId, OMSSResolverError>
         return ERR(req.error)
     }
 
-    if (value.length === 0) {
-        return ERR(new OMSSResolverError(`Invalid OMSS ID "${id}": value cannot be empty`))
+    for (const [i, value] of values.entries()) {
+        if (value.length === 0) {
+            return ERR(new OMSSResolverError(`Invalid OMSS ID "${id}": value ${i + 1} cannot be empty`))
+        }
     }
+
+    const decodedValues = values.map((value) => decodeURIComponent(value))
 
     return OK({
         namespace,
-        value,
+        values: decodedValues,
         raw: id,
     })
 }

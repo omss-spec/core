@@ -3,13 +3,14 @@ import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { parseOMSSId } from '@/features/resolvers/utils.js'
 import type { ProviderResult, Source, Subtitle, UnknownProvider } from '@/types/provider.js'
 import type { OMSSId, ResolverExecutionContext } from '@/types/resolver.js'
-import type { GatheredSources, GetSourcesOptions } from '@/types/source.js'
+import { CleaningFunction, GatheredSources, GetSourcesOptions } from '@/types/source.js'
 import type { Result } from '@/types/utils.js'
 import { OMSSProviderError, OMSSSourceGatheringError } from '@/utils/error.js'
 import { ERR, OK } from '@/utils/utils.js'
 import { createProviderResultEmitter } from '@/features/providers/ProviderResultEmitter.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { ProviderHooks } from '@/types/hooks.js'
+import { ExtractorService } from '@/features/extractors/ExtractorService.js'
 
 /**
  * Internal source gathering core.
@@ -22,11 +23,13 @@ import { ProviderHooks } from '@/types/hooks.js'
  */
 export class SourceCore {
     readonly #providerRegistry: ProviderRegistry
+    readonly #extractorService: ExtractorService
     readonly #omssServer: OMSSServer
 
-    constructor(omssServer: OMSSServer, providerRegistry: ProviderRegistry) {
+    constructor(omssServer: OMSSServer, providerRegistry: ProviderRegistry, extractorService: ExtractorService) {
         this.#omssServer = omssServer
         this.#providerRegistry = providerRegistry
+        this.#extractorService = extractorService
     }
 
     /**
@@ -35,9 +38,15 @@ export class SourceCore {
      * @param omssId - Raw OMSS identifier.
      * @param opts - Optional source gathering parameters.
      * @param providerHookRegistry - Hook registry for provider hooks.
+     * @param cleaningFunction - Optional custom function to clean url's and headers
      * @returns Aggregated provider results or a source gathering error.
      */
-    async getSources(omssId: OMSSId, opts: GetSourcesOptions, providerHookRegistry: HookRegistry<ProviderHooks>): Promise<Result<GatheredSources, OMSSSourceGatheringError>> {
+    async getSources(
+        omssId: OMSSId,
+        opts: GetSourcesOptions,
+        providerHookRegistry: HookRegistry<ProviderHooks>,
+        cleaningFunction: CleaningFunction
+    ): Promise<Result<GatheredSources, OMSSSourceGatheringError>> {
         // try to parse the OMSS ID
         const parsed = parseOMSSId(omssId)
 
@@ -116,7 +125,7 @@ export class SourceCore {
 
             const supportsId = await provider.supportsId(parsed.value)
             if (!supportsId) {
-                return OK({ sources: [], subtitles: [], errors: [new OMSSProviderError(`Provider "${provider.id}" did not support this id: "${parsed.value.value}"`)] })
+                return OK({ sources: [], subtitles: [], errors: [new OMSSProviderError(`Provider "${provider.id}" did not support this id: "${parsed.value.raw}"`)] })
             }
 
             if (signal.aborted) {
@@ -133,13 +142,14 @@ export class SourceCore {
                 return ERR(new OMSSSourceGatheringError('Operation aborted'))
             }
 
-            const resultEmitter = createProviderResultEmitter(provider, providerHookRegistry)
+            const resultEmitter = createProviderResultEmitter(provider, providerHookRegistry, cleaningFunction)
 
             return provider.getSources(
                 {
                     utils: {
                         omssId: parsed.value,
                         abortSignal: signal,
+                        findExtractor: this.#extractorService.find,
                     },
                     meta: metaResult.value,
                 },
@@ -185,7 +195,7 @@ export class SourceCore {
 
         if (!hasSuccess) {
             return ERR(
-                new OMSSSourceGatheringError(`All providers failed for namespace "${parsed.value.namespace}" and id: "${parsed.value.value}"`, {
+                new OMSSSourceGatheringError(`All providers failed for namespace "${parsed.value.namespace}" and id: "${parsed.value.raw}"`, {
                     cause: new AggregateError([...omssErrors, ...unexpectedErrors], 'Multiple failures detected'),
                 })
             )

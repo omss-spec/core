@@ -1,18 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import OMSSServer from '@/core/server.js'
 import { OMSSServerError } from '@/utils/error.js'
-import type { OMSSConfig } from '@/types/config.js'
-
-const createConfig = (overrides: Partial<OMSSConfig> = {}): OMSSConfig =>
-    ({
-        name: 'test-server',
-        ...overrides,
-    }) as OMSSConfig
+import { createOMSSServerConfig } from '../utils.js'
 
 describe('OMSSServer', () => {
     describe('constructor', () => {
         it('initializes core services and stores immutable config', () => {
-            const config = createConfig()
+            const config = createOMSSServerConfig()
 
             const server = new OMSSServer(config)
 
@@ -28,7 +22,7 @@ describe('OMSSServer', () => {
 
     describe('config getter', () => {
         it('returns the same config instance that was passed to the constructor', () => {
-            const config = createConfig({ name: 'another-server' })
+            const config = createOMSSServerConfig({ name: 'another-server' })
             const server = new OMSSServer(config)
 
             expect(server.config).toBe(config)
@@ -37,7 +31,7 @@ describe('OMSSServer', () => {
 
     describe('decorate', () => {
         it('adds a new readonly, enumerable property and returns OK result', () => {
-            const config = createConfig()
+            const config = createOMSSServerConfig()
             const server = new OMSSServer(config)
             const value = { foo: 'bar' }
 
@@ -57,7 +51,7 @@ describe('OMSSServer', () => {
         })
 
         it('returns error when decorator already exists', () => {
-            const config = createConfig()
+            const config = createOMSSServerConfig()
             const server = new OMSSServer(config)
 
             const first = server.decorate('existing', 123)
@@ -68,12 +62,12 @@ describe('OMSSServer', () => {
             if (!second.ok) {
                 expect(second.error).toBeInstanceOf(OMSSServerError)
                 expect(second.error.message).toContain('Decorator "existing" already exists')
-                expect((second.error as OMSSServerError).cause).toBeDefined()
+                expect(second.error.cause).toBeDefined()
             }
         })
 
         it('returns error when dependencies are missing', () => {
-            const config = createConfig()
+            const config = createOMSSServerConfig()
             const server = new OMSSServer(config)
 
             const result = server.decorate('withDeps', 1, ['missingDep'])
@@ -86,7 +80,7 @@ describe('OMSSServer', () => {
         })
 
         it('succeeds when all dependencies exist', () => {
-            const config = createConfig()
+            const config = createOMSSServerConfig()
             const server = new OMSSServer(config)
 
             const depResult = server.decorate('dep', 1)
@@ -100,14 +94,14 @@ describe('OMSSServer', () => {
 
     describe('hasDecorator', () => {
         it('returns true when decorator exists', () => {
-            const server = new OMSSServer(createConfig())
+            const server = new OMSSServer(createOMSSServerConfig())
             server.decorate('decorated', 42)
 
             expect(server.hasDecorator('decorated')).toBe(true)
         })
 
         it('returns false when decorator does not exist', () => {
-            const server = new OMSSServer(createConfig())
+            const server = new OMSSServer(createOMSSServerConfig())
 
             expect(server.hasDecorator('missing')).toBe(false)
         })
@@ -115,7 +109,7 @@ describe('OMSSServer', () => {
 
     describe('getDecorator', () => {
         it('returns OK result with value when decorator exists', () => {
-            const server = new OMSSServer(createConfig())
+            const server = new OMSSServer(createOMSSServerConfig())
             const value = { foo: 'bar' }
             server.decorate('decorated', value)
 
@@ -126,7 +120,7 @@ describe('OMSSServer', () => {
         })
 
         it('returns error when decorator does not exist', () => {
-            const server = new OMSSServer(createConfig())
+            const server = new OMSSServer(createOMSSServerConfig())
 
             const result = server.getDecorator('missing')
 

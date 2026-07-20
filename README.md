@@ -143,6 +143,31 @@ There are hooks available to hook into the OMSS lifecycle. They follow a naming 
 
 Certain services allow for middleware to be registered. Plugins can use this to extend the functionality of the service. (i.e. caching)
 
+## ID convention
+
+IDs are recognized in the format `<namespace>:<value_1>:<value_2>:(...):<value_n>` and standardized by the OMSS spec. Values can be everything. Just note that `:` is a seperator seperating different sections. If you have `:` in your value, you can url encode it. Values will be url decoded during parsing
+
+### TMDB
+
+TMDB provides two media id's:
+
+1. Movies: `tmdb:<movie_id>` e.g. `tmdb:12345`, `tmdb:155`
+2. TV Shows: `tmdb:<tv_show_id>:<season_number>:<episode_number>` e.g. `tmdb:12345:1:2`, `tmdb:155:4:2`
+
+>[!NOTE]
+> All values must be Natural numbers (1, 2, 3, ...) except season_number which can be 0 (for specials).
+
+## IMDb
+
+IMDb provides globally unique title IDs. Since OMSS requires a single media, OMSS will only support Movies and TV Episode IDs (and not TV Series IDs).
+
+1. Movie: `imdb:tt<digits>` e.g. `imdb:tt0468569`
+2. TV Show (Unsupported): `imdb:tt<digits>` e.g. `imdb:tt0944947` 
+3. TV Episode: `imdb:tt<digits>` e.g. `imdb:tt1480055`
+
+> [!NOTE]
+> Valid IMDb IDs are identifiers consisting of the prefix `tt` followed by seven whole numbers.
+
 ### Stability
 
 The API shown above is preliminary and will likely change significantly while the framework is being designed.
