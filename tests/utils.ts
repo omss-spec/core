@@ -20,6 +20,11 @@ import { ProviderService } from '@/features/providers/ProviderService.js'
 import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { OMSSHooks, ProviderHooks } from '@/types/hooks.js'
+import { createProviderResultEmitter } from '@/features/providers/ProviderResultEmitter.js'
+import { ExtractorService } from '@/features/extractors/ExtractorService.js'
+import { ExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
+import { SourceCore } from '@/features/source/SourceCore.js'
+import { SourceService } from '@/features/source/SourceService.js'
 
 /**
  * Create a new {@link OMSSServer} instance.
@@ -146,4 +151,39 @@ export const createProviderService = () => {
     const service = new ProviderService(providerRegistry, omssHookRegistry, providerHookRegistry)
 
     return { service, providerRegistry, omssHookRegistry, providerHookRegistry }
+}
+
+/**
+ * Create a new {@link ProviderResultEmitter} for testing.
+ * @param hookRegistry - Optional hook registry to use for the emitter.
+ */
+export const createProviderEmitter = (hookRegistry = new HookRegistry<ProviderHooks>()) => createProviderResultEmitter(createProvider(), hookRegistry, (obj) => obj)
+
+/**
+ * Create a new {@link SourceCore} instance for testing.
+ */
+export const createSourceCore = () => {
+    const server = createServer()
+    const registry = new ProviderRegistry()
+    const extractorService = new ExtractorService(new ExtractorRegistry())
+    const core = new SourceCore(server, registry, extractorService)
+    const providerHookRegistry = new HookRegistry<ProviderHooks>()
+    const noopCleaner = (obj: { url: string; header: Record<string, string> }) => obj
+
+    return { core, registry, providerHookRegistry, noopCleaner }
+}
+
+/**
+ * Create a new {@link SourceService} instance for testing.
+ */
+export const createSourceService = () => {
+    const server = createServer()
+    const providerRegistry = new ProviderRegistry()
+    const hookRegistry = new HookRegistry<OMSSHooks>()
+    const providerHookRegistry = new HookRegistry<ProviderHooks>()
+    const extractorService = new ExtractorService(new ExtractorRegistry())
+
+    const service = new SourceService(server, providerRegistry, hookRegistry, providerHookRegistry, extractorService)
+
+    return { service, providerRegistry, hookRegistry, providerHookRegistry }
 }
