@@ -138,6 +138,9 @@ describe('ProviderResultEmitter – utils.source.parseQuality', () => {
         ['movie-1080x1920.mp4', 'FHD'],
         ['movie-2160x3840.mp4', '4K'],
         ['movie-4320x7680.mp4', '8K'],
+        ['movie-600x900.mp4', 'SD'],
+        ['movie-000p.mp4', 'Auto'],
+        ['2kbps', 'SD'],
         ['unknown-quality', 'Auto'],
     ]
 

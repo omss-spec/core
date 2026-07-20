@@ -213,4 +213,21 @@ describe('ProviderService', () => {
             expect(result.value).toHaveLength(3)
         }
     })
+
+    it('catalogForNamespace returns wildcard when a provider in namespace returns "*"', async () => {
+        const { service } = createProviderService()
+        const resolver = createResolver(undefined, undefined, { namespace: 'tmdb' })
+        const provider = createProvider(resolver, undefined, {
+            id: 'tmdb-wild',
+            catalog: async () => ['*'],
+        })
+        await service.register(provider)
+
+        const result = await service.catalogForNamespace('tmdb')
+
+        expect(result.ok).toBe(true)
+        if (result.ok) {
+            expect(result.value).toEqual(['*'])
+        }
+    })
 })

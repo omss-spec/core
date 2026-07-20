@@ -34,6 +34,27 @@ describe('SourceCore.getSources', () => {
         if (!result.ok) expect(result.error.message).toContain('No providers found')
     })
 
+    it('returns OK when a specific providerId is requested and registered', async () => {
+        const { core, registry, providerHookRegistry, noopCleaner } = createSourceCore()
+        const resolver = createResolver({ value: 'meta' }, undefined, { namespace: 'tmdb' })
+        const provider = createProvider(
+            resolver,
+            async (_req, result) => {
+                result.source({ type: 'hls', url: 'https://example.com/stream.m3u8', header: {}, streamable: true, quality: 'HD' })
+                return result.done()
+            },
+            { id: 'tmdb-p1' }
+        )
+        await registry.add(provider)
+
+        const result = await core.getSources('tmdb:12345', { providerId: 'tmdb-p1' }, providerHookRegistry, noopCleaner)
+
+        expect(result.ok).toBe(true)
+        if (result.ok) {
+            expect(result.value.sources).toHaveLength(1)
+        }
+    })
+
     it('returns OK with sources when provider succeeds', async () => {
         const { core, registry, providerHookRegistry, noopCleaner } = createSourceCore()
 
@@ -409,6 +430,23 @@ describe('SourceCore.getSources', () => {
         if (!res.ok) expect(res.error).toBeInstanceOf(OMSSSourceGatheringError)
     })
 
+    it('handles a provider rejection with a non-Error reason', async () => {
+        const { core, registry, providerHookRegistry, noopCleaner } = createSourceCore()
+
+        const resolver = createResolver({ value: 'meta' })
+        Object.assign(resolver, { namespace: 'tmdb' })
+
+        const provider = createProvider(resolver, async () => {
+            throw 'non-error rejection'
+        })
+        await registry.add(provider)
+
+        const res = await core.getSources('tmdb:12345', {}, providerHookRegistry, noopCleaner)
+
+        expect(res.ok).toBe(false)
+        if (!res.ok) expect(res.error).toBeInstanceOf(OMSSSourceGatheringError)
+    })
+
     it('returns ERR when signal is aborted after Promise.allSettled resolves', async () => {
         const { core, registry, providerHookRegistry, noopCleaner } = createSourceCore()
 
@@ -421,6 +459,35 @@ describe('SourceCore.getSources', () => {
             return result.done()
         })
         await registry.add(provider)
+
+        const res = await core.getSources('tmdb:12345', { abortSignal: controller.signal }, providerHookRegistry, noopCleaner)
+
+        expect(res.ok).toBe(false)
+        if (!res.ok) expect(res.error.message).toContain('aborted')
+    })
+
+    it('returns ERR when signal aborts before resolver execution in getResolvedMeta', async () => {
+        const { core, registry, providerHookRegistry, noopCleaner } = createSourceCore()
+
+        const controller = new AbortController()
+        const resolver = createResolver({ value: 'meta' })
+        Object.assign(resolver, { namespace: 'tmdb' })
+
+        const provider = createProvider(resolver, async (_req, result) => result.done())
+        await registry.add(provider)
+
+        const realResolver = provider.resolver
+        let resolverAccessCount = 0
+        Object.defineProperty(provider, 'resolver', {
+            configurable: true,
+            get() {
+                resolverAccessCount += 1
+                if (resolverAccessCount >= 2) {
+                    controller.abort()
+                }
+                return realResolver
+            },
+        })
 
         const res = await core.getSources('tmdb:12345', { abortSignal: controller.signal }, providerHookRegistry, noopCleaner)
 
