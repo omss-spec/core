@@ -147,6 +147,15 @@ describe('ProviderResultEmitter – utils.source.parseQuality', () => {
             expect(utils.source.parseQuality(input)).toBe(expected)
         })
     }
+
+    it('parseQuality returns correct quality for kbps bitrates', () => {
+        const { utils } = createProviderEmitter()
+
+        expect(utils.source.parseQuality('25000kbps')).toBe('4K')
+        expect(utils.source.parseQuality('8000kbps')).toBe('8K')
+        expect(utils.source.parseQuality('3000kbps')).toBe('4K')
+        expect(utils.source.parseQuality('1000kbps')).toBe('HD')
+    })
 })
 
 describe('ProviderResultEmitter – utils.subtitle.parseFormat', () => {

@@ -163,24 +163,28 @@ describe('ProviderService', () => {
         if (!result.ok) expect(result.error).toBeInstanceOf(OMSSProviderError)
     })
 
-    it('catalogForNamespace returns ["*"] when a provider catalog returns wildcard', async () => {
+    it('catalog skips further providers for a namespace already collapsed to wildcard', async () => {
         const { service } = createProviderService()
-        const resolver = createResolver(undefined, undefined, { namespace: 'imdb' })
-        const providerA = createProvider(resolver, undefined, {
-            id: 'imdb-wild-b',
-            catalog: async () => ['144'],
-        })
-        const providerB = createProvider(resolver, undefined, {
-            id: 'imdb-wild-a',
+        const resolver = createResolver(undefined, undefined, { namespace: 'tmdb' })
+
+        const providerWild = createProvider(resolver, undefined, {
+            id: 'tmdb-wild',
             catalog: async () => ['*'],
         })
-        await service.register(providerA)
-        await service.register(providerB)
+        const providerSpecific = createProvider(resolver, undefined, {
+            id: 'tmdb-specific',
+            catalog: async () => ['tt001', 'tt002'],
+        })
 
-        const result = await service.catalogForNamespace('imdb')
+        await service.register(providerWild)
+        await service.register(providerSpecific)
+
+        const result = await service.catalog()
 
         expect(result.ok).toBe(true)
-        if (result.ok) expect(result.value).toEqual(['*'])
+        if (result.ok) {
+            expect(result.value.get('tmdb')).toEqual(['*'])
+        }
     })
 
     it('catalogForNamespace merges IDs from multiple providers in the same namespace', async () => {
