@@ -154,7 +154,7 @@ TMDB provides two media id's:
 1. Movies: `tmdb:<movie_id>` e.g. `tmdb:12345`, `tmdb:155`
 2. TV Shows: `tmdb:<tv_show_id>:<season_number>:<episode_number>` e.g. `tmdb:12345:1:2`, `tmdb:155:4:2`
 
->[!NOTE]
+> [!NOTE]
 > All values must be Natural numbers (1, 2, 3, ...) except season_number which can be 0 (for specials).
 
 ## IMDb
@@ -162,7 +162,7 @@ TMDB provides two media id's:
 IMDb provides globally unique title IDs. Since OMSS requires a single media, OMSS will only support Movies and TV Episode IDs (and not TV Series IDs).
 
 1. Movie: `imdb:tt<digits>` e.g. `imdb:tt0468569`
-2. TV Show (Unsupported): `imdb:tt<digits>` e.g. `imdb:tt0944947` 
+2. TV Show (Unsupported): `imdb:tt<digits>` e.g. `imdb:tt0944947`
 3. TV Episode: `imdb:tt<digits>` e.g. `imdb:tt1480055`
 
 > [!NOTE]
