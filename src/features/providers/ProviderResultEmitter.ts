@@ -18,6 +18,7 @@ import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { ProviderHooks } from '@/types/hooks.js'
 import { DASH_REGEX, HLS_REGEX, MKV_REGEX, MP4_REGEX, SRT_REGEX, VTT_REGEX } from '@/utils/regexp.js'
 import { CleaningFunction } from '@/types/source.js'
+import { ParsedOMSSId } from '@/types/resolver.js'
 
 /**
  * Creates a fresh `ProviderResultEmitter` instance scoped to a single
@@ -31,10 +32,11 @@ import { CleaningFunction } from '@/types/source.js'
  * @param provider - The provider instance for which this emitter is being created.
  * @param hookReg - The hook registry instance for managing hooks.
  * @param cleaningFunc - A function to clean up source/subtitle URLs and headers.
+ * @param id - The parsed OMSS ID of the current request.
  * @returns A new `ProviderResultEmitter` bound to this execution.
  *
  */
-export function createProviderResultEmitter(provider: Readonly<UnknownProvider>, hookReg: HookRegistry<ProviderHooks>, cleaningFunc: CleaningFunction): ProviderResultEmitter {
+export function createProviderResultEmitter(provider: Readonly<UnknownProvider>, hookReg: HookRegistry<ProviderHooks>, cleaningFunc: CleaningFunction, id: ParsedOMSSId): ProviderResultEmitter {
     /**
      * Accumulated sources emitted via `source()` during this execution.
      * Flushed into the final result when `done()` is called.
@@ -207,7 +209,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
             if (/\s/.test(action) || Object.keys(this).includes(action)) {
                 return
             }
-            hookReg.run(action, { data, provider })
+            hookReg.run(action, { data, provider, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -217,7 +219,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          * @param args - Values to log, forwarded as-is (same semantics as `console.debug`).
          */
         debug(...args: unknown[]): void {
-            hookReg.run('debug', { provider, args })
+            hookReg.run('debug', { provider, args, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -227,7 +229,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          * @param args - Values to log.
          */
         info(...args: unknown[]): void {
-            hookReg.run('info', { provider, args })
+            hookReg.run('info', { provider, args, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -237,7 +239,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          * @param args - Values to log.
          */
         warn(...args: unknown[]): void {
-            hookReg.run('warn', { provider, args })
+            hookReg.run('warn', { provider, args, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -253,7 +255,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          */
         error(error: OMSSProviderError): void {
             errors.push(error)
-            hookReg.run('error', { provider, error })
+            hookReg.run('error', { provider, error, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -308,6 +310,8 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
             hookReg.run('source', {
                 provider,
                 source: fullSource,
+                id,
+                timestamp: new Date().toISOString(),
             })
         },
 
@@ -326,7 +330,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
             subtitle.header = header
             const fullSub = { ...subtitle, provider: { id: provider.id, name: provider.name } }
             subtitles.push(fullSub)
-            hookReg.run('subtitle', { provider, subtitle: fullSub })
+            hookReg.run('subtitle', { provider, subtitle: fullSub, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -340,7 +344,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
 
             const finalErr = new OMSSProviderError(accumulatedError.message, { cause: accumulatedError })
 
-            hookReg.run('error', { provider, error: finalErr })
+            hookReg.run('error', { provider, error: finalErr, id, timestamp: new Date().toISOString() })
 
             return ERR(finalErr)
         },
@@ -359,7 +363,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
                 errors,
             }
 
-            hookReg.run('done', { provider, result })
+            hookReg.run('done', { provider, result, id, timestamp: new Date().toISOString() })
 
             return OK(result)
         },

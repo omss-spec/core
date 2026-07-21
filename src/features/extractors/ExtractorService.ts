@@ -1,4 +1,6 @@
 import { ExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
+import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import type { OMSSHooks } from '@/types/hooks.js'
 import { Extractor } from '@/types/extractor.js'
 import { Result } from '@/types/utils.js'
 import { ERR, OK } from '@/utils/utils.js'
@@ -6,53 +8,99 @@ import { OMSSExtractorError } from '@/utils/error.js'
 
 export class ExtractorService {
     readonly #extractorRegistry: ExtractorRegistry
+    readonly #hookRegistry: HookRegistry<OMSSHooks>
+    #insideBeforeRegisterExtractor = false
 
-    constructor(extractorRegistry: ExtractorRegistry) {
+    constructor(extractorRegistry: ExtractorRegistry, hookRegistry: HookRegistry<OMSSHooks>) {
         this.#extractorRegistry = extractorRegistry
+        this.#hookRegistry = hookRegistry
     }
 
     /**
-     * Get all extractors (read-only).
+     * Get all registered extractors (read-only).
      */
-    get extractors(): Result<Readonly<Array<Extractor>>, Error> {
+    get extractors(): Result<ReadonlyArray<Extractor>, Error> {
         return OK(this.#extractorRegistry.extractors)
     }
 
     /**
-     * Find an extractor that can handle the given URL.
-     * @param url - URL to find an extractor for.
-     * @returns The first matching extractor if found, otherwise an OMSSExtractorError.
+     * Find an extractor capable of handling the given URL.
+     *
+     * @param url - URL to search for.
+     * @returns The first matching {@link Extractor} or an {@link OMSSExtractorError}.
      */
     async find(url: string): Promise<Result<Extractor, OMSSExtractorError>> {
+        await this.#hookRegistry.run('beforeFindExtractor', { url })
+
         const extractors = this.#extractorRegistry.extractors
 
         const results = await Promise.all(extractors.map((extractor) => extractor.matcher(url)))
 
-        const pairs = extractors.map((extractor, i) => ({
-            extractor,
-            result: results[i]!,
-        }))
+        for (let i = 0; i < extractors.length; i++) {
+            if (results[i]!.ok) {
+                const extractor = extractors[i]!
 
-        for (const { extractor, result } of pairs) {
-            if (result.ok) {
+                await this.#hookRegistry.run('afterFindExtractor', {
+                    url,
+                    extractor,
+                })
+
                 return OK(extractor)
             }
         }
 
-        return ERR(new OMSSExtractorError(`No extractor found for URL "${url}"`))
+        const error = new OMSSExtractorError(`No extractor found for URL "${url}"`)
+
+        await this.#hookRegistry.run('findExtractorFailed', {
+            url,
+            error,
+        })
+
+        return ERR(error)
     }
 
     /**
-     * Add an extractor.
-     * @param extractor - Extractor to add.
+     * Register an extractor.
+     *
+     * @param extractor - Extractor to register.
      */
-    register(extractor: Extractor): Result<void, Error> {
-        this.#extractorRegistry.add(extractor)
+    async register(extractor: Extractor): Promise<Result<void, Error>> {
+        if (this.#insideBeforeRegisterExtractor) {
+            return ERR(new OMSSExtractorError('Extractors cannot be registered during beforeRegisterExtractor'))
+        }
+
+        this.#insideBeforeRegisterExtractor = true
+
+        try {
+            await this.#hookRegistry.run('beforeRegisterExtractor', {
+                extractor,
+            })
+        } finally {
+            this.#insideBeforeRegisterExtractor = false
+        }
+
+        try {
+            this.#extractorRegistry.add(extractor)
+        } catch (error) {
+            const extractorError = error instanceof OMSSExtractorError ? error : new OMSSExtractorError(error instanceof Error ? error.message : String(error))
+
+            await this.#hookRegistry.run('extractorRegisterFailed', {
+                extractor,
+                error: extractorError,
+            })
+
+            return ERR(extractorError)
+        }
+
+        await this.#hookRegistry.run('afterRegisterExtractor', {
+            extractor,
+        })
+
         return OK()
     }
 
     /**
-     * Clear all extractors.
+     * Remove every registered extractor.
      */
     reset(): Result<void, Error> {
         this.#extractorRegistry.reset()
@@ -60,9 +108,9 @@ export class ExtractorService {
     }
 
     /**
-     * Check if an extractor is already registered.
+     * Determine whether an extractor has already been registered.
+     *
      * @param extractor - Extractor to check.
-     * @returns True if the extractor is registered, false otherwise.
      */
     has(extractor: Extractor): Result<boolean, Error> {
         return OK(this.#extractorRegistry.has(extractor))
@@ -70,8 +118,9 @@ export class ExtractorService {
 
     /**
      * Remove an extractor.
+     *
      * @param extractor - Extractor to remove.
-     * @returns True if the extractor was removed, false otherwise.
+     * @returns Whether the extractor was removed.
      */
     remove(extractor: Extractor): Result<boolean, Error> {
         return OK(this.#extractorRegistry.remove(extractor))

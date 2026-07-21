@@ -142,7 +142,7 @@ export class SourceCore {
                 return ERR(new OMSSSourceGatheringError('Operation aborted'))
             }
 
-            const resultEmitter = createProviderResultEmitter(provider, providerHookRegistry, cleaningFunction)
+            const resultEmitter = createProviderResultEmitter(provider, providerHookRegistry, cleaningFunction, parsed.value)
 
             return provider.getSources(
                 {

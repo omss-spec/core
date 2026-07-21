@@ -1,8 +1,9 @@
 import type { OMSSPluginOptions, UnknownPluginType } from '@/types/plugin.js'
 import { OMSSProviderResult, Source, Subtitle, UnknownProvider } from '@/types/provider.js'
-import { OMSSProviderError } from '@/utils/error.js'
-import { OMSSId } from '@/types/resolver.js'
+import { OMSSExtractorError, OMSSProviderError } from '@/utils/error.js'
+import { OMSSId, ParsedOMSSId } from '@/types/resolver.js'
 import { GatheredSources } from '@/types/source.js'
+import { Extractor } from '@/types/extractor.js'
 
 /**
  * Hook map for OMSS lifecycle events.
@@ -64,6 +65,42 @@ export type OMSSHooks = {
      * Called when a getSources call fails entirely (no provider succeeded).
      */
     getSourcesFailed: (payload: { omssId: OMSSId; providerId?: string | undefined; error: OMSSProviderError }) => void | Promise<void>
+
+    /**
+     * Called before an extractor is registered.
+     *
+     * @dangerous
+     * Registering another extractor from this hook is not allowed and will
+     * result in an {@link OMSSExtractorError}.
+     */
+    beforeRegisterExtractor: (payload: { extractor: Extractor }) => void | Promise<void>
+
+    /**
+     * Called after an extractor has been successfully registered.
+     */
+    afterRegisterExtractor: (payload: { extractor: Extractor }) => void | Promise<void>
+
+    /**
+     * Called when extractor registration fails.
+     */
+    extractorRegisterFailed: (payload: { extractor: Extractor; error: OMSSExtractorError }) => void | Promise<void>
+
+    /**
+     * Called before attempting to find an extractor for a URL.
+     */
+    beforeFindExtractor: (payload: { url: string }) => void | Promise<void>
+
+    /**
+     * Called after extractor lookup completes.
+     *
+     * If no extractor matched, {@link payload.extractor} will be `undefined`.
+     */
+    afterFindExtractor: (payload: { url: string; extractor: Extractor | undefined }) => void | Promise<void>
+
+    /**
+     * Called when no extractor could be found for the provided URL.
+     */
+    findExtractorFailed: (payload: { url: string; error: OMSSExtractorError }) => void | Promise<void>
 }
 
 /**
@@ -72,6 +109,14 @@ export type OMSSHooks = {
 interface BaseProviderHookPayload {
     /** The provider instance that emitted the event. */
     provider: Readonly<UnknownProvider>
+    /**
+     * The OMSS ID that was being processed.
+     */
+    id: ParsedOMSSId
+    /**
+     * At what time was this event emitted?
+     */
+    timestamp: string
 }
 
 /**

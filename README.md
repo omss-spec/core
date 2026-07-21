@@ -1,175 +1,195 @@
-# Core
+<div align="center">
 
-![Codecov](https://img.shields.io/codecov/c/github/omss-spec/core)
+# OMSS Core
 
-This project is a rewrite of the [OMSS Framework](https://github.com/omss-spec/framework) and is being designed from the ground up to be completely modular.
+<!-- 
+  <br />
+  <img
+    src="https://raw.githubusercontent.com/omss-spec/graphics/HEAD/omss-landscape-outlined.svg"
+    width="500"
+    height="auto"
+    alt="OMSS Core"
+  />
+  <br /><br />
+-->
 
-The core framework intentionally contains almost no functionality. Its purpose is to act as a lightweight TypeScript runtime and plugin orchestrator for OMSS-compliant services (OMSS Plugins).
+</div>
 
-Additional functionality—such as HTTP support, caching, ID resolvers ([ongoing discussion](https://github.com/omss-spec/omss-spec/issues/5)), and eventually features like WebSocket support—can be added by registering OMSS plugins with the framework.
+<div align="center">
 
-This approach provides maximum flexibility while keeping implementations standardized.
+[![CI](https://github.com/omss-spec/core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/omss-spec/core/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/@omss/core.svg?style=flat)](https://www.npmjs.com/package/@omss/core)
+[![npm downloads](https://img.shields.io/npm/dm/@omss/core.svg?style=flat)](https://www.npmjs.com/package/@omss/core)
+[![Codecov](https://img.shields.io/codecov/c/github/omss-spec/core)](https://codecov.io/gh/omss-spec/core)
+[![Security Responsible Disclosure](https://img.shields.io/badge/Security-Responsible%20Disclosure-yellow.svg)](https://github.com/omss-spec/core/blob/main/SECURITY.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
-Until the project reaches a more stable state, pull requests will not be accepted. If you would like to share ideas, feedback, or suggestions, please open an issue instead.
+</div>
 
-Development is still in its early stages and will take some time.
+<br />
 
-## Naming Conventions
+**OMSS Core** is the official TypeScript runtime and plugin orchestrator for building [OMSS-compliant](https://github.com/omss-spec/omss-spec) media streaming services.
 
-Using precise terminology is important so that everyone understands the same concepts when discussing OMSS. The table below defines the preferred meanings of commonly used terms within the OMSS ecosystem.
+The core is intentionally minimal. Its sole responsibility is to manage the OMSS lifecycle, load plugins, and expose shared states between them. All additional functionality — HTTP transport, caching, resolvers, auth — is added via **OMSS Plugins**.
 
-| Word            | Meaning                                                                                                                                                                                                                                  | Example/Value                                                                                                          |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **the spec**    | The current Open Media Streaming Specification (currently v1.1).                                                                                                                                                                         | [OMSS Spec](https://github.com/omss-spec/omss-spec)                                                                    |
-| **plugin**      | A generic term for a piece of software that adds features or functionality to an existing program. When possible, refer to the specific plugin or ecosystem being discussed.                                                             | OMSS Plugin, Fastify Plugin, Nuvio Plugin etc.                                                                         |
-| **OMSS Plugin** | A plugin that extends the functionality of the OMSS Framework.                                                                                                                                                                           | (see example below)                                                                                                    |
-| **Resolver**    | A type of OMSS Plugin that converts a given ID into usable data for providers. Resolvers should generally be implemented for a single ID-Provider. Resolvers will be registered to the resolverService and not the OMSS Server directly. | TBD                                                                                                                    |
-| **ID**          | A unique identifier consisting of a namespace and a value (seperated by `:`).                                                                                                                                                            | [Ongoing discussion](https://github.com/omss-spec/omss-spec/issues/5); `tmdb:12345`, `einthusan:6EHy`                  |
-| **Namespace**   | The portion of an ID that identifies which ID-Provider owns the value.                                                                                                                                                                   | `tmdb`, `einthusan`                                                                                                    |
-| **ID-Provider** | A third-party service capable of providing metadata for a given ID                                                                                                                                                                       | [TMDB](https://www.themoviedb.org/), [Einthusan](https://einthusan.tv/)                                                |
-| **Provider**    | A file within a consumer repository that receives resolver data from the OMSS Framework and is responsible for returning streaming sources.                                                                                              | [Example Provider (old framework)](https://github.com/omss-spec/framework/blob/main/examples/providers/my-provider.ts) |
-| **OMSS Server** | The primary class/component of the OMSS Framework. It is responsible for loading and managing plugins, resolvers, and providers.                                                                                                         | (see planned documentation below)                                                                                      |
+> [!NOTE]
+> The project is in beta. The API shown here is preliminary.
 
-## Planned Technical Documentation
 
-```ts
-export type OMSSPluginType<T = void> = (server: OMSSServer, config: T) => Promise<void>
-export type OMSSPluginOptions<T> = T | ((server: OMSSServer) => T)
+### Table of Contents
 
-export class OMSSServer {
-    private readonly omssConfig: OMSSConfig
+- [Install](#install)
+- [Quick Start](#quick-start)
+- [Features](#features)
+- [Documentation](#documentation-_coming-soon_)
+- [Ecosystem](#ecosystem)
+- [ID Convention](#id-convention)
+- [Contributing](#contributing)
+- [Support](#support)
+- [Team](#team)
+- [Acknowledgments](#acknowledgments)
+- [License](#license)
+- [Dependencies](#dependencies)
 
-    constructor(omssConfig: OMSSConfig) {
-        this.omssConfig = omssConfig
-    }
 
-    /**
-     * Register an OMSS plugin.
-     * @param plugin - The plugin to register.
-     * @param options - Configuration for the plugin.
-     */
-    async register<T>(plugin: OMSSPluginType<T>, options: OMSSPluginOptions<T>): Promise<void> {
-        const resolvedOptions = typeof options === 'function' ? (options as (server: OMSSServer) => T)(this) : options
+## Install
 
-        await plugin(this, resolvedOptions)
-    }
-
-    /**
-     * Get the OMSS configuration.
-     */
-    getOMSSConfig(): OMSSConfig {
-        return this.omssConfig
-    }
-}
+```sh
+npm install @omss/core
 ```
 
-### Philosophy
+```sh
+yarn add @omss/core
+```
 
-The core framework intentionally contains almost no functionality.
+```sh
+pnpm add @omss/core
+```
 
-Its responsibilities are limited to:
 
-- Managing the OMSS lifecycle
-- Providing access to framework configuration
-- Registering and orchestrating plugins
-- Exposing shared state and APIs between plugins
-
-Everything else should be implemented as a plugin.
-
-### Example
+## Quick Start
 
 ```ts
 import { OMSSServer } from '@omss/core'
-
 import httpPlugin from '@omss/plugin-http'
 import cachePlugin from '@omss/plugin-cache'
-import resolverPlugin from '@omss/plugin-resolver'
 
 const server = new OMSSServer({
-    name: 'My Digitalized Movie Collection',
+  name: 'My Media Server',
 })
 
 await server.plugins.register(httpPlugin, {
-    port: 3000,
+  port: 3000,
 })
-
-await server.plugins.register(cachePlugin, {
-    ttl: 300,
-})
-
-await server.plugins.register(fsPlugin, {
-    path: path.join('\\nas.home\\medialib\\'),
-})
+// and many other features.
 ```
 
-### Plugin Architecture
+Do you want to know more? Check out the [documentation](https://omss.mintlify.site) for a more in-depth guide.
 
-Plugins are executed in the order they are registered.
 
-A plugin may:
+## Features
 
-- Register routes
-- Extend the server instance
-- Register additional services
-- Expose APIs to other plugins
-- Hook into OMSS lifecycle events
-- Provide information to providers
+- **Modular by design** — the core ships with almost no functionality. Everything is a plugin.
+- **OMSS Lifecycle** - use hooks to get notified of OMSS lifecycle events. 
+- **Fully typed** — built in TypeScript with full type exports for **Everything** (no `any` used!)
+- **Extensible**: OMSS Core is fully extensible via its hooks, plugins, and decorators.
+- **Middleware support** — certain services expose middleware chains that plugins can extend (e.g., caching layers).
+- **Developer friendly**: the framework is built to be very expressive and help developers in their daily use without sacrificing performance.
+- **Standards-compliant** — built with the [OMSS Specification](https://github.com/omss-spec/omss-spec) in mind.
 
-```ts
-export interface HTTPPluginConfig {
-    port: number
-}
 
-export default async function httpPlugin(server: OMSSServer, config: HTTPPluginConfig): Promise<void> {
-    // Register HTTP transport
-}
-```
+## Documentation _(coming soon)_
 
-### Planned Official Plugins
+The documentation is currently under development. You can find the latest version at [https://omss.mintlify.site](https://omss.mintlify.site).
 
-- `@omss/plugin-http` — Fastify integration
-- `@omss/plugin-cache` — Memory and Redis caching
-- `@omss/plugin-tmdb` — Provides TMDB data to providers
-- `@omss/plugin-v2` — Future OMSS v2 compatibility
-- `@omss/plugin-auth` — Basic authentication support
 
-Additional plugins can be developed independently as long as they comply with the OMSS Plugin API. In the future, an official plugin registry may be introduced for both official and community-maintained plugins.
+## Ecosystem
 
-### Hooks
+We are working on a comprehensive ecosystem of plugins that can be used to extend OMSS.
 
-There are hooks available to hook into the OMSS lifecycle. They follow a naming pattern. More details will be added later. Try to avoid throwing and/or creating loops (some checks are in place to prevent this. not completely foolproof though).
+The current Open Media Streaming Specification can always be found at [https://github.com/omss-spec/omss-spec](https://github.com/omss-spec/omss-spec).
 
-### Middleware
+### Plugins
 
-Certain services allow for middleware to be registered. Plugins can use this to extend the functionality of the service. (i.e. caching)
+An official plugin registry is planned for the future.
 
-## ID convention
-
-IDs are recognized in the format `<namespace>:<value_1>:<value_2>:(...):<value_n>` and standardized by the OMSS spec. Values can be everything. Just note that `:` is a seperator seperating different sections. If you have `:` in your value, you can url encode it. Values will be url decoded during parsing
-
-### TMDB
-
-TMDB provides two media id's:
-
-1. Movies: `tmdb:<movie_id>` e.g. `tmdb:12345`, `tmdb:155`
-2. TV Shows: `tmdb:<tv_show_id>:<season_number>:<episode_number>` e.g. `tmdb:12345:1:2`, `tmdb:155:4:2`
+**Official Plugins** (maintained by the OMSS team):
 
 > [!NOTE]
-> All values must be Natural numbers (1, 2, 3, ...) except season_number which can be 0 (for specials).
+> These plugins are a WIP.
 
-## IMDb
+| Plugin               | Description                  |
+|:---------------------|:-----------------------------|
+| `@omss/plugin-http`  | HTTP transport via Fastify   |
+| `@omss/plugin-cache` | Memory and Redis caching     |
+| `@omss/plugin-auth`  | Basic authentication support |
 
-IMDb provides globally unique title IDs. Since OMSS requires a single media, OMSS will only support Movies and TV Episode IDs (and not TV Series IDs).
 
-1. Movie: `imdb:tt<digits>` e.g. `imdb:tt0468569`
-2. TV Show (Unsupported): `imdb:tt<digits>` e.g. `imdb:tt0944947`
-3. TV Episode: `imdb:tt<digits>` e.g. `imdb:tt1480055`
+### Resolvers
+
+Resolvers are used to resolve OMSS IDs to media metadata.
+
+**Official Resolvers** (maintained by the OMSS team):
 
 > [!NOTE]
-> Valid IMDb IDs are identifiers consisting of the prefix `tt` followed by seven whole numbers.
+> These resolvers are a WIP.
 
-### Stability
+| Resolver              | Description                  |
+|:----------------------|:-----------------------------|
+| `@omss/resolver-tmdb` | TMDB resolver                |
 
-The API shown above is preliminary and will likely change significantly while the framework is being designed.
 
-No stability guarantees are provided until the first public release.
+## ID Convention
+
+IDs follow the format `<namespace>:<value_1>:<value_2>:...:<value_n>`. Values can contain any character — use URL encoding if your value includes `:` or whitespaces. Values are URL-decoded during parsing.
+
+However, the following namespaces are reserved for the OMSS specification and must follow the rules below. More namespaces may be added in the future:
+
+**TMDB:**
+- Movie: `tmdb:<movie_id>` — e.g., `tmdb:155`
+- TV Episode: `tmdb:<show_id>:<season>:<episode>` — e.g., `tmdb:1396:3:7`
+
+> [!NOTE]
+> All values must be natural numbers (≥ 1), except `season_number` which may be `0` (specials).
+
+**IMDb** (Movies and TV Episodes only — not series):
+- Movie: `imdb:tt<digits>` — e.g., `imdb:tt0468569`
+- TV Episode: `imdb:tt<digits>` — e.g., `imdb:tt1480055`
+
+> [!NOTE]
+> Valid IMDb IDs consist of the prefix `tt` followed by exactly seven digits.
+
+A full list of supported namespaces and their values can be found in the [OMSS Specification](https://github.com/omss-spec/omss-spec) and the [docs](https://omss.mintlify.site) (coming soon).
+
+
+## Contributing
+
+Whether reporting bugs, discussing improvements, or writing code — contributions are welcome. Please read the [CONTRIBUTING](./CONTRIBUTING.md) guidelines before opening a pull request.
+
+
+## Support
+
+We are active on [GitHub Discussions](https://github.com/orgs/omss-spec/discussions).
+
+## Team
+
+OMSS Core (and its plugins) is the result of a great community.
+
+**Lead Maintainers:**
+- [**@An0n-00**](https://github.com/An0n-00), [**@An0n-01**](https://github.com/An0n-01), https://www.npmjs.com/~an0n-000
+
+**Contributors:**
+- [*@LorisRue*](https://github.com/lorisrue), https://www.npmjs.com/~lorisrue
+- [*@autovalue*](https://github.com/autovalue)
+
+## Acknowledgments
+
+This project (rather it's ecosystem/API) is inspired by [Fastify](https://github.com/fastify/fastify). 
+
+## License
+
+Licensed under [MIT](./LICENSE).
+
+## Dependencies
+
+This is a pure TypeScript project, meaning it has no production dependencies.

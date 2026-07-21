@@ -1,8 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
 import { ExtractorService } from '@/features/extractors/ExtractorService.js'
 import { OMSSExtractorError } from '@/utils/error.js'
 import { createExtractor } from '../../utils.js'
+import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { OMSSHooks } from '@/types/hooks.js'
 
 describe('ExtractorService', () => {
     let registry: ExtractorRegistry
@@ -10,7 +12,7 @@ describe('ExtractorService', () => {
 
     beforeEach(() => {
         registry = new ExtractorRegistry()
-        service = new ExtractorService(registry)
+        service = new ExtractorService(registry, new HookRegistry<OMSSHooks>())
     })
 
     it('returns all registered extractors', () => {
@@ -26,13 +28,181 @@ describe('ExtractorService', () => {
         }
     })
 
-    it('register adds an extractor', () => {
+    it('register adds an extractor', async () => {
         const extractor = createExtractor()
 
-        const result = service.register(extractor)
+        const result = await service.register(extractor)
 
         expect(result.ok).toBe(true)
         expect(registry.has(extractor)).toBe(true)
+    })
+
+    it('runs hooks around successful extractor registration', async () => {
+        const registry = new ExtractorRegistry()
+        const hooks = new HookRegistry<OMSSHooks>()
+
+        const before = vi.fn()
+        const after = vi.fn()
+
+        hooks.add('beforeRegisterExtractor', before)
+        hooks.add('afterRegisterExtractor', after)
+
+        const service = new ExtractorService(registry, hooks)
+
+        const extractor = createExtractor()
+
+        const result = await service.register(extractor)
+
+        expect(result.ok).toBe(true)
+        expect(before).toHaveBeenCalledTimes(1)
+        expect(after).toHaveBeenCalledTimes(1)
+    })
+
+    it('runs hooks around successful extractor lookup', async () => {
+        const registry = new ExtractorRegistry()
+        const hooks = new HookRegistry<OMSSHooks>()
+
+        const before = vi.fn()
+        const after = vi.fn()
+
+        hooks.add('beforeFindExtractor', before)
+        hooks.add('afterFindExtractor', after)
+
+        const extractor = createExtractor(true)
+        registry.add(extractor)
+
+        const service = new ExtractorService(registry, hooks)
+
+        const result = await service.find('https://example.com')
+
+        expect(result.ok).toBe(true)
+
+        expect(before).toHaveBeenCalledWith({
+            url: 'https://example.com',
+        })
+
+        expect(after).toHaveBeenCalledWith({
+            url: 'https://example.com',
+            extractor,
+        })
+    })
+
+    it('runs failure hook when no extractor matches', async () => {
+        const registry = new ExtractorRegistry()
+        const hooks = new HookRegistry<OMSSHooks>()
+
+        const failed = vi.fn()
+
+        hooks.add('findExtractorFailed', failed)
+
+        registry.add(createExtractor(false))
+
+        const service = new ExtractorService(registry, hooks)
+
+        const result = await service.find('https://example.com')
+
+        expect(result.ok).toBe(false)
+        expect(failed).toHaveBeenCalledTimes(1)
+
+        expect(failed.mock.calls[0]).toBeDefined()
+        if (failed.mock.calls[0]) {
+            expect(failed.mock.calls[0][0].url).toBe('https://example.com')
+            expect(failed.mock.calls[0][0].error).toBeInstanceOf(OMSSExtractorError)
+        }
+    })
+
+    it('prevents extractors from being registered during beforeRegisterExtractor', async () => {
+        const registry = new ExtractorRegistry()
+        const hooks = new HookRegistry<OMSSHooks>()
+
+        const service = new ExtractorService(registry, hooks)
+
+        const a = createExtractor()
+        const b = createExtractor()
+
+        hooks.add('beforeRegisterExtractor', async () => {
+            const result = await service.register(b)
+
+            expect(result.ok).toBe(false)
+
+            if (!result.ok) {
+                expect(result.error).toBeInstanceOf(OMSSExtractorError)
+                expect(result.error.message).toContain('Extractors cannot be registered during beforeRegisterExtractor')
+            }
+        })
+
+        const result = await service.register(a)
+
+        expect(result.ok).toBe(true)
+    })
+
+    it('runs failure hook when registry.add throws', async () => {
+        const registry = new ExtractorRegistry()
+        const hooks = new HookRegistry<OMSSHooks>()
+
+        const failed = vi.fn()
+
+        hooks.add('extractorRegisterFailed', failed)
+
+        vi.spyOn(registry, 'add').mockImplementation(() => {
+            throw new Error('boom')
+        })
+
+        const service = new ExtractorService(registry, hooks)
+
+        const result = await service.register(createExtractor())
+
+        expect(result.ok).toBe(false)
+
+        if (!result.ok) {
+            expect(result.error).toBeInstanceOf(OMSSExtractorError)
+            expect(result.error.message).toBe('boom')
+        }
+
+        expect(failed).toHaveBeenCalledTimes(1)
+    })
+
+    it('runs failure hook when registry.add throws', async () => {
+        const registry = new ExtractorRegistry()
+        const hooks = new HookRegistry<OMSSHooks>()
+        const err = new OMSSExtractorError('boom')
+
+        const failed = vi.fn()
+
+        hooks.add('extractorRegisterFailed', failed)
+
+        vi.spyOn(registry, 'add').mockImplementation(() => {
+            throw err
+        })
+
+        const service = new ExtractorService(registry, hooks)
+
+        const result = await service.register(createExtractor())
+
+        expect(result.ok).toBe(false)
+
+        if (!result.ok) {
+            expect(result.error).toBeInstanceOf(OMSSExtractorError)
+            expect(result.error).toBe(err)
+            expect(result.error.message).toBe('boom')
+        }
+
+        expect(failed).toHaveBeenCalledTimes(1)
+    })
+
+    it('wraps non-Error throwables', async () => {
+        vi.spyOn(registry, 'add').mockImplementation(() => {
+            throw 'boom'
+        })
+
+        const result = await service.register(createExtractor())
+
+        expect(result.ok).toBe(false)
+
+        if (!result.ok) {
+            expect(result.error).toBeInstanceOf(OMSSExtractorError)
+            expect(result.error.message).toBe('boom')
+        }
     })
 
     it('reset clears the registry', () => {

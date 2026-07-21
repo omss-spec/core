@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/omss-spec/core/security/advisories/new
+    about: Please report security vulnerabilities privately using GitHub's private reporting feature.
+  - name: OMSS Specification Discussion
+    url: https://github.com/omss-spec/omss-spec/discussions
+    about: Questions or discussions about the OMSS specification itself.
+  - name: OMSS Documentation
+    url: https://omss.mintlify.site
+    about: Check the official documentation first.

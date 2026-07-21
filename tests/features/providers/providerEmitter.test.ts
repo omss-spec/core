@@ -5,6 +5,7 @@ import { OMSSProviderError } from '@/utils/error.js'
 import { createProvider, createProviderEmitter } from '../../utils.js'
 import { ProviderHooks } from '@/types/hooks.js'
 import { SourceQuality } from '@/types/provider.js'
+import { ParsedOMSSId } from '@/types/resolver.js'
 
 describe('createProviderResultEmitter', () => {
     it('emits sources, subtitles, and aggregates errors with hooks', () => {
@@ -21,7 +22,7 @@ describe('createProviderResultEmitter', () => {
         hookRegistry.add('error', errorHook)
         hookRegistry.add('done', doneHook)
 
-        const emitter = createProviderResultEmitter(provider, hookRegistry, (_) => _)
+        const emitter = createProviderResultEmitter(provider, hookRegistry, (_) => _, {} as ParsedOMSSId)
 
         emitter.source({ type: 'hls', url: 'https://example.com', header: {}, streamable: true, quality: 'HD' })
         emitter.subtitle({ format: 'vtt', url: 'https://example.com/subs.vtt', label: 'English SDH', header: {} })
@@ -52,7 +53,7 @@ describe('createProviderResultEmitter', () => {
 
         hookRegistry.add('error', errorHook)
 
-        const emitter = createProviderResultEmitter(provider, hookRegistry, (_) => _)
+        const emitter = createProviderResultEmitter(provider, hookRegistry, (_) => _, {} as ParsedOMSSId)
 
         const nonFatal = new OMSSProviderError('non-fatal')
         emitter.error(nonFatal)
@@ -237,7 +238,7 @@ describe('ProviderResultEmitter – emit / debug / info / warn', () => {
 describe('ProviderResultEmitter – source with audioTracks', () => {
     it('applies cleaning function to audio tracks', () => {
         const clean = vi.fn((obj) => ({ ...obj, url: obj.url + '?cleaned', header: {} }))
-        const emitter = createProviderResultEmitter(createProvider(), new HookRegistry<ProviderHooks>(), clean)
+        const emitter = createProviderResultEmitter(createProvider(), new HookRegistry<ProviderHooks>(), clean, {} as ParsedOMSSId)
 
         emitter.source({
             type: 'hls',
