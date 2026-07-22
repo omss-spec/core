@@ -89,13 +89,13 @@ Do you want to know more? Check out the [documentation](https://omss.mintlify.si
 
 ## Features
 
-- **Modular by design** — the core ships with almost no functionality. Everything is a plugin.
-- **OMSS Lifecycle** - use hooks to get notified of OMSS lifecycle events. 
-- **Fully typed** — built in TypeScript with full type exports for **Everything** (no `any` used!)
+- **Modular by design**: The core ships with almost no functionality. Everything is a plugin.
+- **OMSS Lifecycle**: Use hooks to get notified of OMSS lifecycle events. 
+- **Fully typed**: Built in TypeScript with full type exports for **Everything** (no `any` used!)
 - **Extensible**: OMSS Core is fully extensible via its hooks, plugins, and decorators.
-- **Middleware support** — certain services expose middleware chains that plugins can extend (e.g., caching layers).
-- **Developer friendly**: the framework is built to be very expressive and help developers in their daily use without sacrificing performance.
-- **Standards-compliant** — built with the [OMSS Specification](https://github.com/omss-spec/omss-spec) in mind.
+- **Middleware support**: Certain services expose middleware chains that plugins can extend (e.g., caching layers).
+- **Developer friendly**: The framework is built to be very expressive and help developers in their daily use without sacrificing performance.
+- **Standards-compliant**: Built with the [OMSS Specification](https://github.com/omss-spec/omss-spec) in mind.
 
 
 ## Documentation _(coming soon)_
