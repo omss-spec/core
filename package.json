@@ -19,7 +19,10 @@
         }
     },
     "files": [
-        "dist"
+        "dist",
+        "README.md",
+        "SECURITY.md",
+        "LICENSE"
     ],
     "scripts": {
         "build": "tsdown",
