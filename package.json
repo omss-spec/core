@@ -27,7 +27,7 @@
         "dev": "tsdown --watch",
         "example": "tsx example/example.ts",
         "test": "vitest run",
-        "prepublishOnly": "npm run build"
+        "prepublishOnly": "npm run test && npm run build"
     },
     "keywords": [
         "omss",
@@ -48,5 +48,16 @@
         "tsx": "^4.22.4",
         "typescript": "^5.8.0",
         "vitest": "^4.1.9"
-    }
+    },
+    "engines": {
+        "node": ">=20"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/omss-spec/core.git"
+    },
+    "bugs": {
+        "url": "https://github.com/omss-spec/core/issues"
+    },
+    "homepage": "https://github.com/omss-spec/core#readme"
 }
