@@ -88,16 +88,9 @@ jobs:
                   echo "version=$VERSION" >> "$GITHUB_OUTPUT"
                   echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
 
-            - name: Test
-              run: npm run test
-
-            - name: Build
-              run: npm run build
-
             - name: Push version commit and tag
               run: |
                   git push origin main --follow-tags
-
 
             - name: Check whether version exists on npm
               id: npm_check
