@@ -173,14 +173,17 @@ We are active on [GitHub Discussions](https://github.com/orgs/omss-spec/discussi
 
 ## Team
 
-OMSS Core (and its plugins) is the result of a great community.
+OMSS Core (and its plugins) is the result of a great community (alphabetically sorted).
 
 **Lead Maintainers:**
 - [**@An0n-00**](https://github.com/An0n-00), [**@An0n-01**](https://github.com/An0n-01), https://www.npmjs.com/~an0n-000
 
 **Contributors:**
-- [*@LorisRue*](https://github.com/lorisrue), https://www.npmjs.com/~lorisrue
-- [*@autovalue*](https://github.com/autovalue)
+- [**@anochj**](https://github.com/anochj)
+- [**@autovalue**](https://github.com/autovalue)
+- [**@LorisRue**](https://github.com/lorisrue), https://www.npmjs.com/~lorisrue
+
+_(Join us by contributing!)_
 
 ## Acknowledgments
 
