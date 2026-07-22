@@ -1,0 +1,81 @@
+name: Deprecate an npm version
+
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                description: "Version to deprecate"
+                required: true
+                type: string
+            reason:
+                description: "Reason for deprecating"
+                required: false
+                type: string
+
+concurrency:
+    group: npm-deprecate
+    cancel-in-progress: false
+
+jobs:
+    deprecate:
+        name: deprecate an npm version
+        runs-on: ubuntu-latest
+        environment: production
+
+        permissions:
+            contents: write
+            id-token: write
+
+        env:
+            PACKAGE_NAME: "@omss/core"
+
+        steps:
+            - uses: actions/create-github-app-token@v3
+              id: app-token
+              with:
+                  client-id: ${{ secrets.APP_CLIENT_ID }}
+                  private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+            - uses: actions/checkout@v4
+              with:
+                  ref: main
+                  fetch-depth: 0
+                  token: ${{ steps.app-token.outputs.token }}
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: "22"
+                  registry-url: "https://registry.npmjs.org"
+
+            - name: Update npm
+              run: npm install -g npm@latest
+
+            - name: Check npm version exists
+              id: npm_check
+              run: |
+                  VERSION="${{ github.event.inputs.version }}"
+
+                  if npm view "${PACKAGE_NAME}@${VERSION}" version >/dev/null 2>&1; then
+                    echo "exists=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "exists=false" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - name: Fail if version does not exist
+              if: steps.npm_check.outputs.exists != 'true'
+              run: |
+                  echo "Version ${{ github.event.inputs.version }} does not exist on npm."
+                  exit 1
+
+            - name: deprecate npm version
+              run: npm deprecate "${PACKAGE_NAME}@${{ github.event.inputs.version }}" "${{ github.event.inputs.reason || 'No reason provided' }}"
+
+            - name: Summary
+              run: |
+                  {
+                    echo "## Deprecate completed"
+                    echo
+                    echo "- Package: \`${PACKAGE_NAME}\`"
+                    echo "- Version: \`${{ github.event.inputs.version }}\`"
+                    echo "- Reason: \`${{ github.event.inputs.reason || 'No reason provided' }}\`"
+                  } >> "$GITHUB_STEP_SUMMARY"
