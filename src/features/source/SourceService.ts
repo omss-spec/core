@@ -10,6 +10,7 @@ import { AsyncDeduper } from '@/utils/AsyncDeduper.js'
 import { MiddlewareRunner } from '@/utils/middleware.js'
 import type { OMSSHooks, ProviderHooks } from '@/types/hooks.js'
 import { ExtractorService } from '@/features/extractors/ExtractorService.js'
+import { HookService } from '@/features/hooks/HookService.js'
 
 /**
  * Public API for resolving sources for media.
@@ -21,7 +22,6 @@ import { ExtractorService } from '@/features/extractors/ExtractorService.js'
 export class SourceService {
     readonly #hookRegistry: HookRegistry<OMSSHooks>
     readonly #core: SourceCore
-    readonly #providerHookRegistry: HookRegistry<ProviderHooks>
 
     /**
      * Middleware runner for SourceService operations.
@@ -33,16 +33,9 @@ export class SourceService {
      */
     readonly #inFlight = new AsyncDeduper<string, Result<GatheredSources, OMSSSourceGatheringError>>()
 
-    constructor(
-        omssServer: OMSSServer,
-        providerRegistry: ProviderRegistry,
-        hookRegistry: HookRegistry<OMSSHooks>,
-        providerHookRegistry: HookRegistry<ProviderHooks>,
-        extractorService: ExtractorService
-    ) {
+    constructor(omssServer: OMSSServer, providerRegistry: ProviderRegistry, hookRegistry: HookRegistry<OMSSHooks>, extractorService: ExtractorService) {
         this.#hookRegistry = hookRegistry
         this.#core = new SourceCore(omssServer, providerRegistry, extractorService)
-        this.#providerHookRegistry = providerHookRegistry
     }
 
     public get cleaningFunction(): CleaningFunction {
@@ -104,7 +97,9 @@ export class SourceService {
 
         const inFlightKey = this.#getInFlightKey(omssId, options.providerId)
 
-        const result = await this.#inFlight.run(inFlightKey, () => this.#core.getSources(omssId, options, this.#providerHookRegistry, options.cleaningFunction ?? this.cleaningFunction))
+        const result = await this.#inFlight.run(inFlightKey, () =>
+            this.#core.getSources(omssId, options, options.providerHookService ?? new HookService<ProviderHooks>(), options.cleaningFunction ?? this.cleaningFunction)
+        )
 
         if (result.ok) {
             await this.#hookRegistry.run('afterGetSources', {

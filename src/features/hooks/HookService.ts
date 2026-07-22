@@ -3,7 +3,7 @@ import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 export class HookService<T> {
     readonly #hookRegistry: HookRegistry<T>
 
-    constructor(hookRegistry: HookRegistry<T>) {
+    constructor(hookRegistry: HookRegistry<T> = new HookRegistry<T>()) {
         this.#hookRegistry = hookRegistry
     }
 
@@ -32,5 +32,16 @@ export class HookService<T> {
      */
     reset(): ReturnType<HookRegistry<T>['reset']> {
         return this.#hookRegistry.reset()
+    }
+
+    /**
+     * Get the hook registry.
+     *
+     * This is only exposed for internal purposes and should not be accessed in consumer projects.
+     * @dangerous
+     * @internal
+     */
+    __getRegistry(): HookRegistry<T> {
+        return this.#hookRegistry
     }
 }

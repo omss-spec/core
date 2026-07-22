@@ -8,9 +8,9 @@ import type { Result } from '@/types/utils.js'
 import { OMSSProviderError, OMSSSourceGatheringError } from '@/utils/error.js'
 import { ERR, OK } from '@/utils/utils.js'
 import { createProviderResultEmitter } from '@/features/providers/ProviderResultEmitter.js'
-import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { ProviderHooks } from '@/types/hooks.js'
 import { ExtractorService } from '@/features/extractors/ExtractorService.js'
+import { HookService } from '@/features/hooks/HookService.js'
 
 /**
  * Internal source gathering core.
@@ -44,7 +44,7 @@ export class SourceCore {
     async getSources(
         omssId: OMSSId,
         opts: GetSourcesOptions,
-        providerHookRegistry: HookRegistry<ProviderHooks>,
+        providerHookRegistry: HookService<ProviderHooks>,
         cleaningFunction: CleaningFunction
     ): Promise<Result<GatheredSources, OMSSSourceGatheringError>> {
         // try to parse the OMSS ID
@@ -142,7 +142,7 @@ export class SourceCore {
                 return ERR(new OMSSSourceGatheringError('Operation aborted'))
             }
 
-            const resultEmitter = createProviderResultEmitter(provider, providerHookRegistry, cleaningFunction, parsed.value)
+            const resultEmitter = createProviderResultEmitter(provider, providerHookRegistry.__getRegistry(), cleaningFunction, parsed.value)
 
             return provider.getSources(
                 {

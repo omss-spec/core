@@ -25,6 +25,7 @@ import { ExtractorService } from '@/features/extractors/ExtractorService.js'
 import { ExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
 import { SourceCore } from '@/features/source/SourceCore.js'
 import { SourceService } from '@/features/source/SourceService.js'
+import { HookService } from '@/features/hooks/HookService.js'
 
 /**
  * Create a new {@link OMSSServer} instance.
@@ -146,11 +147,10 @@ export function createProvider<R extends BaseResolver<unknown> = ReturnType<type
 export const createProviderService = () => {
     const providerRegistry = new ProviderRegistry()
     const omssHookRegistry = new HookRegistry<OMSSHooks>()
-    const providerHookRegistry = new HookRegistry<ProviderHooks>()
 
-    const service = new ProviderService(providerRegistry, omssHookRegistry, providerHookRegistry)
+    const service = new ProviderService(providerRegistry, omssHookRegistry)
 
-    return { service, providerRegistry, omssHookRegistry, providerHookRegistry }
+    return { service, providerRegistry, omssHookRegistry }
 }
 
 /**
@@ -167,10 +167,10 @@ export const createSourceCore = () => {
     const registry = new ProviderRegistry()
     const extractorService = new ExtractorService(new ExtractorRegistry(), new HookRegistry<OMSSHooks>())
     const core = new SourceCore(server, registry, extractorService)
-    const providerHookRegistry = new HookRegistry<ProviderHooks>()
+    const providerHookService = new HookService<ProviderHooks>()
     const noopCleaner = (obj: { url: string; header: Record<string, string> }) => obj
 
-    return { core, registry, providerHookRegistry, noopCleaner }
+    return { core, registry, providerHookService, noopCleaner }
 }
 
 /**
@@ -180,10 +180,9 @@ export const createSourceService = () => {
     const server = createServer()
     const providerRegistry = new ProviderRegistry()
     const hookRegistry = new HookRegistry<OMSSHooks>()
-    const providerHookRegistry = new HookRegistry<ProviderHooks>()
     const extractorService = new ExtractorService(new ExtractorRegistry(), hookRegistry)
 
-    const service = new SourceService(server, providerRegistry, hookRegistry, providerHookRegistry, extractorService)
+    const service = new SourceService(server, providerRegistry, hookRegistry, extractorService)
 
-    return { service, providerRegistry, hookRegistry, providerHookRegistry }
+    return { service, providerRegistry, hookRegistry }
 }

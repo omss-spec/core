@@ -9,7 +9,7 @@ import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { ERR, OK } from '@/utils/utils.js'
 import { Result } from '@/types/utils.js'
 import { ProviderService } from '@/features/providers/ProviderService.js'
-import { OMSSHooks, ProviderHooks } from '@/types/hooks.js'
+import { OMSSHooks } from '@/types/hooks.js'
 import { ExtractorService } from '@/features/extractors/ExtractorService.js'
 import { ExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
 
@@ -33,7 +33,6 @@ export class OMSSServer {
         this.#config = config
 
         const hooksRegistry = new HookRegistry<OMSSHooks>()
-        const providerHookRegistry = new HookRegistry<ProviderHooks>()
         const extractorRegistry = new ExtractorRegistry()
         const pluginRegistry = new PluginRegistry(this)
         const providerRegistry = new ProviderRegistry()
@@ -41,8 +40,8 @@ export class OMSSServer {
         this.hooks = new HookService<OMSSHooks>(hooksRegistry)
         this.extractors = new ExtractorService(extractorRegistry, hooksRegistry)
         this.plugins = new PluginService(this, pluginRegistry, hooksRegistry)
-        this.providers = new ProviderService(providerRegistry, hooksRegistry, providerHookRegistry)
-        this.sources = new SourceService(this, providerRegistry, hooksRegistry, providerHookRegistry, this.extractors)
+        this.providers = new ProviderService(providerRegistry, hooksRegistry)
+        this.sources = new SourceService(this, providerRegistry, hooksRegistry, this.extractors)
     }
 
     /**

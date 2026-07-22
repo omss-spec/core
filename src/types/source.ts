@@ -3,6 +3,8 @@ import { Result } from '@/types/utils.js'
 import { Source, Subtitle } from '@/types/provider.js'
 import { OMSSError, OMSSSourceGatheringError } from '@/utils/error.js'
 import { MiddlewareHandler } from '@/types/middleware.js'
+import { ProviderHooks } from '@/types/hooks.js'
+import { HookService } from '@/features/hooks/HookService.js'
 
 /**
  * Options for fetching sources.
@@ -11,6 +13,7 @@ export type GetSourcesOptions = {
     providerId?: string
     abortSignal?: AbortSignal
     cleaningFunction?: CleaningFunction
+    providerHookService?: HookService<ProviderHooks>
 }
 
 /**
