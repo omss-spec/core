@@ -23,7 +23,9 @@ concurrency:
 
 jobs:
     release:
+        name: Release
         runs-on: ubuntu-latest
+        environment: production
 
         permissions:
             contents: write
