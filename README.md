@@ -1,21 +1,23 @@
 <div align="center">
 
-# OMSS Core
-
-<!-- 
-  <br />
+<picture>
+  <source
+    media="(prefers-color-scheme: dark)"
+    srcset="https://raw.githubusercontent.com/omss-spec/docs/refs/heads/main/assets/logo-dark.svg"
+  />
+  <source
+    media="(prefers-color-scheme: light)"
+    srcset="https://raw.githubusercontent.com/omss-spec/docs/refs/heads/main/assets/logo-light.svg"
+  />
   <img
-    src="https://raw.githubusercontent.com/omss-spec/graphics/HEAD/omss-landscape-outlined.svg"
+    src="https://raw.githubusercontent.com/omss-spec/docs/refs/heads/main/assets/logo-light.svg"
     width="500"
     height="auto"
     alt="OMSS Core"
   />
-  <br /><br />
--->
+</picture>
 
-</div>
-
-<div align="center">
+# Core
 
 [![CI](https://github.com/omss-spec/core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/omss-spec/core/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@omss/core.svg?style=flat)](https://www.npmjs.com/package/@omss/core)
