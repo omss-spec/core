@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 
 export default defineConfig({
     resolve: {
-        alias: { '@': resolve(__dirname, 'src') },
+        alias: { '@': resolve(import.meta.dirname, 'src') },
     },
     test: {
         globals: true,
