@@ -1,7 +1,7 @@
 import type { UnknownProvider } from '@/types/provider.js'
 import { OMSSProviderError } from '@/utils/error.js'
 import { ERR, OK, validateSafeUniqueString } from '@/utils/utils.js'
-import { Result } from '@/types/utils.js'
+import { type Result } from '@/types/utils.js'
 import { CATALOG_ENTRY } from '@/utils/regexp.js'
 
 /**

@@ -1,4 +1,4 @@
-import { Extractor } from '@/types/extractor.js'
+import { type Extractor } from '@/types/extractor.js'
 
 /**
  * Extractor Registry

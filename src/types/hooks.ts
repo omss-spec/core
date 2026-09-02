@@ -1,9 +1,9 @@
 import type { OMSSPluginOptions, UnknownPluginType } from '@/types/plugin.js'
-import { OMSSProviderResult, Source, Subtitle, UnknownProvider } from '@/types/provider.js'
-import { OMSSExtractorError, OMSSProviderError } from '@/utils/error.js'
-import { OMSSId, ParsedOMSSId } from '@/types/resolver.js'
-import { GatheredSources } from '@/types/source.js'
-import { Extractor } from '@/types/extractor.js'
+import { type OMSSProviderResult, type Source, type Subtitle, type UnknownProvider } from '@/types/provider.js'
+import { type OMSSExtractorError, type OMSSProviderError } from '@/utils/error.js'
+import { type OMSSId, type ParsedOMSSId } from '@/types/resolver.js'
+import { type GatheredSources } from '@/types/source.js'
+import { type Extractor } from '@/types/extractor.js'
 
 /**
  * Hook map for OMSS lifecycle events.

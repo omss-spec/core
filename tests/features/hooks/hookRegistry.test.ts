@@ -1,4 +1,4 @@
-import { TestHooks } from './common.js'
+import { type TestHooks } from './common.js'
 import { describe, expect, it, vi } from 'vitest'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 

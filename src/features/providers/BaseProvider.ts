@@ -1,7 +1,7 @@
-import { BaseResolver } from '@/features/resolvers/BaseResolver.js'
-import { OMSSProvider, ProviderResult, ProviderResultEmitter, ProviderSourcesMeta, ResolverMetadata } from '@/types/provider.js'
+import { type BaseResolver } from '@/features/resolvers/BaseResolver.js'
+import { type OMSSProvider, type ProviderResult, type ProviderResultEmitter, type ProviderSourcesMeta, type ResolverMetadata } from '@/types/provider.js'
 import type { ParsedOMSSId } from '@/types/resolver.js'
-import { NonEmptyArray } from '@/types/utils.js'
+import { type NonEmptyArray } from '@/types/utils.js'
 
 /**
  * Base class for all providers.

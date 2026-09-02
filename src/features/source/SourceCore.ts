@@ -1,16 +1,16 @@
-import OMSSServer from '@/core/server.js'
-import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
+import type OMSSServer from '@/core/OMSSServer.js'
+import { type ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { parseOMSSId } from '@/features/resolvers/utils.js'
 import type { ProviderResult, Source, Subtitle, UnknownProvider } from '@/types/provider.js'
 import type { OMSSId, ResolverExecutionContext } from '@/types/resolver.js'
-import { CleaningFunction, GatheredSources, GetSourcesOptions } from '@/types/source.js'
+import { type CleaningFunction, type GatheredSources, type GetSourcesOptions } from '@/types/source.js'
 import type { Result } from '@/types/utils.js'
 import { OMSSProviderError, OMSSSourceGatheringError } from '@/utils/error.js'
 import { ERR, OK } from '@/utils/utils.js'
 import { createProviderResultEmitter } from '@/features/providers/ProviderResultEmitter.js'
-import { ProviderHooks } from '@/types/hooks.js'
-import { ExtractorService } from '@/features/extractors/ExtractorService.js'
-import { HookService } from '@/features/hooks/HookService.js'
+import { type ProviderHooks } from '@/types/hooks.js'
+import { type ExtractorService } from '@/features/extractors/ExtractorService.js'
+import { type HookService } from '@/features/hooks/HookService.js'
 
 /**
  * Internal source gathering core.
@@ -149,7 +149,7 @@ export class SourceCore {
                     utils: {
                         omssId: parsed.value,
                         abortSignal: signal,
-                        findExtractor: this.#extractorService.find,
+                        findExtractor: (...args) => this.#extractorService.find(...args),
                     },
                     meta: metaResult.value,
                 },

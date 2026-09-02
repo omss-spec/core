@@ -1,4 +1,4 @@
-import OMSSServer from '@/core/server.js'
+import type OMSSServer from '@/core/OMSSServer.js'
 
 /**
  * Plugin with no configuration.

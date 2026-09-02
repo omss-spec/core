@@ -1,5 +1,5 @@
-import { Result } from '@/types/utils.js'
-import { OMSSError } from '@/utils/error.js'
+import { type Result } from '@/types/utils.js'
+import { type OMSSError } from '@/utils/error.js'
 import { SAFE_UNIQUE_STRING } from '@/utils/regexp.js'
 
 /**

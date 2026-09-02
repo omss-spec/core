@@ -37,7 +37,6 @@ The core is intentionally minimal. Its sole responsibility is to manage the OMSS
 > [!NOTE]
 > The project is in beta. The API shown here is preliminary.
 
-
 ### Table of Contents
 
 - [Install](#install)
@@ -53,7 +52,6 @@ The core is intentionally minimal. Its sole responsibility is to manage the OMSS
 - [License](#license)
 - [Dependencies](#dependencies)
 
-
 ## Install
 
 ```sh
@@ -68,7 +66,6 @@ yarn add @omss/core
 pnpm add @omss/core
 ```
 
-
 ## Quick Start
 
 ```ts
@@ -77,33 +74,30 @@ import httpPlugin from '@omss/plugin-http'
 import cachePlugin from '@omss/plugin-cache'
 
 const server = new OMSSServer({
-  name: 'My Media Server',
+    name: 'My Media Server',
 })
 
 await server.plugins.register(httpPlugin, {
-  port: 3000,
+    port: 3000,
 })
 // and many other features.
 ```
 
 Do you want to know more? Check out the [documentation](https://omss.mintlify.site) for a more in-depth guide.
 
-
 ## Features
 
 - **Modular by design**: The core ships with almost no functionality. Everything is a plugin.
-- **OMSS Lifecycle**: Use hooks to get notified of OMSS lifecycle events. 
+- **OMSS Lifecycle**: Use hooks to get notified of OMSS lifecycle events.
 - **Fully typed**: Built in TypeScript with full type exports for **Everything** (no `any` used!)
 - **Extensible**: OMSS Core is fully extensible via its hooks, plugins, and decorators.
 - **Middleware support**: Certain services expose middleware chains that plugins can extend (e.g., caching layers).
 - **Developer friendly**: The framework is built to be very expressive and help developers in their daily use without sacrificing performance.
 - **Standards-compliant**: Built with the [OMSS Specification](https://github.com/omss-spec/omss-spec) in mind.
 
-
 ## Documentation _(coming soon)_
 
 The documentation is currently under development. You can find the latest version at [https://omss.mintlify.site](https://omss.mintlify.site).
-
 
 ## Ecosystem
 
@@ -121,11 +115,10 @@ An official plugin registry is planned for the future.
 > These plugins are a WIP.
 
 | Plugin               | Description                  |
-|:---------------------|:-----------------------------|
+| :------------------- | :--------------------------- |
 | `@omss/plugin-http`  | HTTP transport via Fastify   |
 | `@omss/plugin-cache` | Memory and Redis caching     |
 | `@omss/plugin-auth`  | Basic authentication support |
-
 
 ### Resolvers
 
@@ -136,10 +129,9 @@ Resolvers are used to resolve OMSS IDs to media metadata.
 > [!NOTE]
 > These resolvers are a WIP.
 
-| Resolver              | Description                  |
-|:----------------------|:-----------------------------|
-| `@omss/resolver-tmdb` | TMDB resolver                |
-
+| Resolver              | Description   |
+| :-------------------- | :------------ |
+| `@omss/resolver-tmdb` | TMDB resolver |
 
 ## ID Convention
 
@@ -148,6 +140,7 @@ IDs follow the format `<namespace>:<value_1>:<value_2>:...:<value_n>`. Values ca
 However, the following namespaces are reserved for the OMSS specification and must follow the rules below. More namespaces may be added in the future:
 
 **TMDB:**
+
 - Movie: `tmdb:<movie_id>` — e.g., `tmdb:155`
 - TV Episode: `tmdb:<show_id>:<season>:<episode>` — e.g., `tmdb:1396:3:7`
 
@@ -155,6 +148,7 @@ However, the following namespaces are reserved for the OMSS specification and mu
 > All values must be natural numbers (≥ 1), except `season_number` which may be `0` (specials).
 
 **IMDb** (Movies and TV Episodes only — not series):
+
 - Movie: `imdb:tt<digits>` — e.g., `imdb:tt0468569`
 - TV Episode: `imdb:tt<digits>` — e.g., `imdb:tt1480055`
 
@@ -163,11 +157,9 @@ However, the following namespaces are reserved for the OMSS specification and mu
 
 A full list of supported namespaces and their values can be found in the [OMSS Specification](https://github.com/omss-spec/omss-spec) and the [docs](https://omss.mintlify.site) (coming soon).
 
-
 ## Contributing
 
 Whether reporting bugs, discussing improvements, or writing code — contributions are welcome. Please read the [CONTRIBUTING](./CONTRIBUTING.md) guidelines before opening a pull request.
-
 
 ## Support
 
@@ -178,9 +170,11 @@ We are active on [GitHub Discussions](https://github.com/orgs/omss-spec/discussi
 OMSS Core (and its plugins) is the result of a great community (alphabetically sorted).
 
 **Lead Maintainers:**
+
 - [**@An0n-00**](https://github.com/An0n-00), [**@An0n-01**](https://github.com/An0n-01), https://www.npmjs.com/~an0n-000
 
 **Contributors:**
+
 - [**@anochj**](https://github.com/anochj)
 - [**@autovalue**](https://github.com/autovalue)
 - [**@LorisRue**](https://github.com/lorisrue), https://www.npmjs.com/~lorisrue
@@ -189,7 +183,7 @@ _(Join us by contributing!)_
 
 ## Acknowledgments
 
-This project (rather it's ecosystem/API) is inspired by [Fastify](https://github.com/fastify/fastify). 
+This project (rather it's ecosystem/API) is inspired by [Fastify](https://github.com/fastify/fastify).
 
 ## License
 

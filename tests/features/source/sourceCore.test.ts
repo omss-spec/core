@@ -4,6 +4,25 @@ import { createProvider, createResolver, createSourceCore } from '../../utils.js
 import { OK } from '@/utils/utils.js'
 
 describe('SourceCore.getSources', () => {
+    it('provides a working findExtractor util bound to the extractor service', async () => {
+        const { core, registry, providerHookService, noopCleaner } = createSourceCore()
+        const resolver = createResolver({ value: 'meta' }, undefined, { namespace: 'tmdb' })
+        const provider = createProvider(
+            resolver,
+            async (req, result) => {
+                const found = await req.utils.findExtractor('https://example.com/video')
+                expect(found.ok).toBe(false)
+                return result.done()
+            },
+            { id: 'tmdb-p1' }
+        )
+        await registry.add(provider)
+
+        const result = await core.getSources('tmdb:12345', { providerId: 'tmdb-p1' }, providerHookService, noopCleaner)
+
+        expect(result.ok).toBe(true)
+    })
+
     it('returns ERR for an invalid OMSS id', async () => {
         const { core, providerHookService, noopCleaner } = createSourceCore()
 

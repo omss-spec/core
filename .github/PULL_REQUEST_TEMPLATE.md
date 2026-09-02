@@ -21,5 +21,6 @@ Closes #
 - [ ] I have read the [CONTRIBUTING](../CONTRIBUTING.md) guidelines
 - [ ] I have discussed this change in an issue before submitting
 - [ ] My code follows the existing code style (`npm run format`)
+- [ ] My code passes lint (`npm run lint`)
 - [ ] All existing tests pass (`npm test`) with 100% coverage
 - [ ] I have added tests that cover my changes

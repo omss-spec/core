@@ -1,6 +1,6 @@
 import type { OMSSId, ParsedOMSSId } from '@/types/resolver.js'
 import { OMSSResolverError } from '@/utils/error.js'
-import { Result } from '@/types/utils.js'
+import { type Result } from '@/types/utils.js'
 import { ERR, OK, validateSafeUniqueString } from '@/utils/utils.js'
 
 /**

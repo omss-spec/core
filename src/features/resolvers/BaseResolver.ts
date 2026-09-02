@@ -1,5 +1,5 @@
-import { OMSSResolverError, Result } from '@/public-api.js'
-import { OMSSId, OMSSResolver, ParsedOMSSId, ResolverExecutionContext, ResolverResult } from '@/types/resolver.js'
+import { type OMSSResolverError, type Result } from '@/public-api.js'
+import { type OMSSId, type OMSSResolver, type ParsedOMSSId, type ResolverExecutionContext, type ResolverResult } from '@/types/resolver.js'
 
 /**
  * Base class for all OMSS resolvers.

@@ -1,8 +1,8 @@
-import { ExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
-import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { type ExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
+import { type HookRegistry } from '@/features/hooks/HookRegistry.js'
 import type { OMSSHooks } from '@/types/hooks.js'
-import { Extractor } from '@/types/extractor.js'
-import { Result } from '@/types/utils.js'
+import { type Extractor } from '@/types/extractor.js'
+import { type Result } from '@/types/utils.js'
 import { ERR, OK } from '@/utils/utils.js'
 import { OMSSExtractorError } from '@/utils/error.js'
 
@@ -34,12 +34,10 @@ export class ExtractorService {
 
         const extractors = this.#extractorRegistry.extractors
 
-        const results = await Promise.all(extractors.map((extractor) => extractor.matcher(url)))
+        const matches = await Promise.all(extractors.map(async (extractor) => ({ extractor, result: await extractor.matcher(url) })))
 
-        for (let i = 0; i < extractors.length; i++) {
-            if (results[i]!.ok) {
-                const extractor = extractors[i]!
-
+        for (const { extractor, result } of matches) {
+            if (result.ok) {
                 await this.#hookRegistry.run('afterFindExtractor', {
                     url,
                     extractor,

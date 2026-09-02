@@ -3,9 +3,9 @@ import { HookRegistry } from '@/features/hooks/HookRegistry.js'
 import { createProviderResultEmitter } from '@/features/providers/ProviderResultEmitter.js'
 import { OMSSProviderError } from '@/utils/error.js'
 import { createProvider, createProviderEmitter } from '../../utils.js'
-import { ProviderHooks } from '@/types/hooks.js'
-import { SourceQuality } from '@/types/provider.js'
-import { ParsedOMSSId } from '@/types/resolver.js'
+import { type ProviderHooks } from '@/types/hooks.js'
+import { type SourceQuality } from '@/types/provider.js'
+import { type ParsedOMSSId } from '@/types/resolver.js'
 
 describe('createProviderResultEmitter', () => {
     it('emits sources, subtitles, and aggregates errors with hooks', () => {

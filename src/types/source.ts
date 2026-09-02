@@ -1,10 +1,10 @@
-import { OMSSId } from '@/types/resolver.js'
-import { Result } from '@/types/utils.js'
-import { Source, Subtitle } from '@/types/provider.js'
-import { OMSSError, OMSSSourceGatheringError } from '@/utils/error.js'
-import { MiddlewareHandler } from '@/types/middleware.js'
-import { ProviderHooks } from '@/types/hooks.js'
-import { HookService } from '@/features/hooks/HookService.js'
+import { type OMSSId } from '@/types/resolver.js'
+import { type Result } from '@/types/utils.js'
+import { type Source, type Subtitle } from '@/types/provider.js'
+import { type OMSSError, type OMSSSourceGatheringError } from '@/utils/error.js'
+import { type MiddlewareHandler } from '@/types/middleware.js'
+import { type ProviderHooks } from '@/types/hooks.js'
+import { type HookService } from '@/features/hooks/HookService.js'
 
 /**
  * Options for fetching sources.

@@ -1,10 +1,10 @@
 import type { ParsedOMSSId } from '@/types/resolver.js'
 import type { BaseResolver } from '@/features/resolvers/BaseResolver.js'
 import type { OMSSProviderError } from '@/utils/error.js'
-import { NonEmptyArray, Result } from '@/types/utils.js'
+import { type NonEmptyArray, type Result } from '@/types/utils.js'
 
-import { MiddlewareHandler } from '@/types/middleware.js'
-import { ExtractorService } from '@/features/extractors/ExtractorService.js'
+import { type MiddlewareHandler } from '@/types/middleware.js'
+import { type ExtractorService } from '@/features/extractors/ExtractorService.js'
 
 /**
  * Core provider interface.

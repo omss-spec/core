@@ -1,6 +1,6 @@
-import type OMSSServer from '@/core/server.js'
-import { OMSSResolverError } from '@/utils/error.js'
-import { Result } from '@/types/utils.js'
+import type OMSSServer from '@/core/OMSSServer.js'
+import { type OMSSResolverError } from '@/utils/error.js'
+import { type Result } from '@/types/utils.js'
 
 /**
  * Canonical OMSS ID representation.

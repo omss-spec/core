@@ -4,7 +4,7 @@ import { ExtractorService } from '@/features/extractors/ExtractorService.js'
 import { OMSSExtractorError } from '@/utils/error.js'
 import { createExtractor } from '../../utils.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
-import { OMSSHooks } from '@/types/hooks.js'
+import { type OMSSHooks } from '@/types/hooks.js'
 
 describe('ExtractorService', () => {
     let registry: ExtractorRegistry

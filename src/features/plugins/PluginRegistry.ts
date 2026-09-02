@@ -1,8 +1,8 @@
 import type { OMSSConfiguredPluginType, OMSSPluginOptions, OMSSPluginType, UnknownPluginType } from '@/types/plugin.js'
-import OMSSServer from '@/core/server.js'
-import { PluginState } from '@/features/plugins/plugin-state.js'
+import type OMSSServer from '@/core/OMSSServer.js'
+import { PluginState } from '@/features/plugins/PluginState.js'
 import { OMSSPluginError } from '@/utils/error.js'
-import { Result } from '@/types/utils.js'
+import { type Result } from '@/types/utils.js'
 import { ERR, OK } from '@/utils/utils.js'
 
 /**

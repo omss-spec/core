@@ -1,7 +1,7 @@
-import { PluginRegistry } from '@/features/plugins/PluginRegistry.js'
-import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { type PluginRegistry } from '@/features/plugins/PluginRegistry.js'
+import { type HookRegistry } from '@/features/hooks/HookRegistry.js'
 import type { OMSSConfiguredPluginType, OMSSPluginOptions, OMSSPluginType, UnknownPluginType } from '@/types/plugin.js'
-import OMSSServer from '@/core/server.js'
+import type OMSSServer from '@/core/OMSSServer.js'
 import { ERR } from '@/utils/utils.js'
 import { OMSSPluginError } from '@/utils/error.js'
 import type { OMSSHooks } from '@/types/hooks.js'
@@ -44,7 +44,7 @@ export class PluginService {
 
         this.#insideBeforePluginRegister = true
         try {
-            await this.#hookRegistry.run('beforePluginRegister', { plugin: plugin as UnknownPluginType, options })
+            await this.#hookRegistry.run('beforePluginRegister', { plugin: plugin, options })
         } finally {
             this.#insideBeforePluginRegister = false
         }

@@ -1,7 +1,7 @@
 /**
  * Export the OMSSServer class.
  */
-export * from '@/core/server.js'
+export * from '@/core/OMSSServer.js'
 
 /**
  * Export public utilities (API's & helpers)

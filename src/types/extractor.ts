@@ -1,5 +1,5 @@
-import { Result } from '@/types/utils.js'
-import { OMSSExtractorError } from '@/utils/error.js'
+import { type Result } from '@/types/utils.js'
+import { type OMSSExtractorError } from '@/utils/error.js'
 
 /**
  * Extractor interface.

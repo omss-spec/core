@@ -48,7 +48,7 @@ describe('MiddlewareRunner', () => {
         runner.use('log', async (ctx, next) => {
             ctx.messages.push('one')
             await next()
-            expect(next()).rejects.toThrow('next() called multiple times')
+            await expect(next()).rejects.toThrow('next() called multiple times')
             return ctx.messages
         })
 
@@ -69,6 +69,6 @@ describe('MiddlewareRunner', () => {
             throw error
         })
 
-        expect(runner.run('log', context, async () => context.messages)).rejects.toThrow(error)
+        await expect(runner.run('log', context, async () => context.messages)).rejects.toThrow(error)
     })
 })

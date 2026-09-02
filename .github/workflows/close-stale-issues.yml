@@ -4,7 +4,7 @@ name: Close inactive bug issues
 
 on:
     schedule:
-        - cron: "29 6 * * *" # daily
+        - cron: '29 6 * * *' # daily
     workflow_dispatch:
         inputs:
             dry_run:
@@ -20,11 +20,11 @@ jobs:
     close_stale:
         runs-on: ubuntu-latest
         steps:
-            -   uses: actions/create-github-app-token@v3
-                id: app-token
-                with:
-                    client-id: ${{ secrets.APP_CLIENT_ID }}
-                    private-key: ${{ secrets.APP_PRIVATE_KEY }}
+            - uses: actions/create-github-app-token@v3
+              id: app-token
+              with:
+                  client-id: ${{ secrets.APP_CLIENT_ID }}
+                  private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
             - name: Close bug issues inactive longer than 30 days
               uses: actions/github-script@v7

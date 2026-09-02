@@ -1,4 +1,4 @@
-import { MiddlewareHandler, MiddlewareOperationMap } from '@/types/middleware.js'
+import { type MiddlewareHandler, type MiddlewareOperationMap } from '@/types/middleware.js'
 
 /**
  * Reusable typed middleware runner.

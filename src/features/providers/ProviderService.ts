@@ -1,11 +1,11 @@
 import type { ProviderServiceMiddleware, ProviderServiceOperations, UnknownProvider } from '@/types/provider.js'
 import { OMSSProviderError } from '@/utils/error.js'
 import { ERR, OK } from '@/utils/utils.js'
-import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
-import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { type ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
+import { type HookRegistry } from '@/features/hooks/HookRegistry.js'
 import type { Result } from '@/types/utils.js'
 import type { OMSSHooks } from '@/types/hooks.js'
-import { MiddlewareRunner } from '@/utils/middleware.js'
+import { MiddlewareRunner } from '@/utils/MiddlewareRunner.js'
 
 /**
  * The public API for managing OMSS Providers.

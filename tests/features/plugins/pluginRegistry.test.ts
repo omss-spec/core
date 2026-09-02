@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import OMSSServer from '@/core/server.js'
+import type OMSSServer from '@/core/OMSSServer.js'
 import { PluginRegistry } from '@/features/plugins/PluginRegistry.js'
-import { PluginState } from '@/features/plugins/plugin-state.js'
+import { PluginState } from '@/features/plugins/PluginState.js'
 import { OMSSPluginError } from '@/utils/error.js'
 import { createServer } from '../../utils.js'
-import { Result } from '@/types/utils.js'
+import { type Result } from '@/types/utils.js'
 
 describe('PluginRegistry', () => {
     it('registers simple plugins and tracks state', async () => {

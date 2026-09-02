@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { PluginRegistry } from '@/features/plugins/PluginRegistry.js'
 import { PluginService } from '@/features/plugins/PluginService.js'
 import { HookRegistry } from '@/features/hooks/HookRegistry.js'
-import { PluginState } from '@/features/plugins/plugin-state.js'
+import { PluginState } from '@/features/plugins/PluginState.js'
 import { OMSSPluginError } from '@/utils/error.js'
 import { createServer } from '../../utils.js'
-import { OMSSHooks } from '@/types/hooks.js'
+import { type OMSSHooks } from '@/types/hooks.js'
 
 describe('PluginService', () => {
     it('runs hooks around successful plugin registration and exposes plugin state', async () => {
