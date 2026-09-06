@@ -59,7 +59,6 @@ export class PluginRegistry {
         const resolved = typeof options === 'function' ? (options as (server: OMSSServer) => unknown)(this.#server) : options
 
         try {
-            // Check if the plugin has a single argument
             if (plugin.length === 1) {
                 // execute the plugin with the server instance
                 await (plugin as OMSSPluginType)(this.#server)

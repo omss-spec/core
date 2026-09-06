@@ -1,7 +1,6 @@
 import { type PluginRegistry } from '@/features/plugins/PluginRegistry.js'
 import { type HookRegistry } from '@/features/hooks/HookRegistry.js'
 import type { OMSSConfiguredPluginType, OMSSPluginOptions, OMSSPluginType, UnknownPluginType } from '@/types/plugin.js'
-import type OMSSServer from '@/core/OMSSServer.js'
 import { ERR } from '@/utils/utils.js'
 import { OMSSPluginError } from '@/utils/error.js'
 import type { OMSSHooks } from '@/types/hooks.js'
@@ -14,7 +13,7 @@ export class PluginService {
     readonly #hookRegistry: HookRegistry<OMSSHooks>
     #insideBeforePluginRegister = false
 
-    constructor(omssServer: OMSSServer, pluginRegistry: PluginRegistry, hookRegistry: HookRegistry<OMSSHooks>) {
+    constructor(pluginRegistry: PluginRegistry, hookRegistry: HookRegistry<OMSSHooks>) {
         this.#pluginRegistry = pluginRegistry
         this.#hookRegistry = hookRegistry
     }

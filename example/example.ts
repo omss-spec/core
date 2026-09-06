@@ -1,7 +1,5 @@
 import { HookService, type OMSSConfig, OMSSServer, type ProviderHooks } from '../src/index.js'
 
-console.log(HookService)
-
 const config: OMSSConfig = { name: 'omss-example' }
 const server = new OMSSServer(config)
 

@@ -20,12 +20,7 @@ describe('ExtractorService', () => {
 
         registry.add(extractor)
 
-        const result = service.extractors
-
-        expect(result.ok).toBe(true)
-        if (result.ok) {
-            expect(result.value).toEqual([extractor])
-        }
+        expect(service.extractors).toEqual([extractor])
     })
 
     it('register adds an extractor', async () => {
@@ -210,9 +205,8 @@ describe('ExtractorService', () => {
 
         registry.add(extractor)
 
-        const result = service.reset()
+        service.reset()
 
-        expect(result.ok).toBe(true)
         expect(registry.extractors).toEqual([])
     })
 
@@ -221,12 +215,7 @@ describe('ExtractorService', () => {
 
         registry.add(extractor)
 
-        const result = service.has(extractor)
-
-        expect(result.ok).toBe(true)
-        if (result.ok) {
-            expect(result.value).toBe(true)
-        }
+        expect(service.has(extractor)).toBe(true)
     })
 
     it('remove removes an extractor', () => {
@@ -234,13 +223,7 @@ describe('ExtractorService', () => {
 
         registry.add(extractor)
 
-        const result = service.remove(extractor)
-
-        expect(result.ok).toBe(true)
-        if (result.ok) {
-            expect(result.value).toBe(true)
-        }
-
+        expect(service.remove(extractor)).toBe(true)
         expect(registry.has(extractor)).toBe(false)
     })
 

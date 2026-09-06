@@ -128,6 +128,10 @@ export class ProviderService {
      * @param namespace - The resolver namespace to look up (e.g. `"tmdb"`).
      * @returns Merged list of IDs for the namespace, `["*"]` if any provider
      *          signals wildcard support, or `undefined` if no catalog data exists.
+     *
+     * @remarks
+     * Re-invokes `catalog()` on every matching provider on each call — see
+     * {@link ProviderService.catalog} for caching implications.
      */
     async catalogForNamespace(namespace: string): Promise<Result<string[], OMSSProviderError>> {
         const providers = this.getAll((p) => p.resolver.namespace === namespace)

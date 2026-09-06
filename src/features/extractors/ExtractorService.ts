@@ -19,8 +19,8 @@ export class ExtractorService {
     /**
      * Get all registered extractors (read-only).
      */
-    get extractors(): Result<ReadonlyArray<Extractor>, Error> {
-        return OK(this.#extractorRegistry.extractors)
+    get extractors(): ReadonlyArray<Extractor> {
+        return this.#extractorRegistry.extractors
     }
 
     /**
@@ -62,7 +62,7 @@ export class ExtractorService {
      *
      * @param extractor - Extractor to register.
      */
-    async register(extractor: Extractor): Promise<Result<void, Error>> {
+    async register(extractor: Extractor): Promise<Result<void, OMSSExtractorError>> {
         if (this.#insideBeforeRegisterExtractor) {
             return ERR(new OMSSExtractorError('Extractors cannot be registered during beforeRegisterExtractor'))
         }
@@ -100,9 +100,8 @@ export class ExtractorService {
     /**
      * Remove every registered extractor.
      */
-    reset(): Result<void, Error> {
+    reset(): void {
         this.#extractorRegistry.reset()
-        return OK()
     }
 
     /**
@@ -110,8 +109,8 @@ export class ExtractorService {
      *
      * @param extractor - Extractor to check.
      */
-    has(extractor: Extractor): Result<boolean, Error> {
-        return OK(this.#extractorRegistry.has(extractor))
+    has(extractor: Extractor): boolean {
+        return this.#extractorRegistry.has(extractor)
     }
 
     /**
@@ -120,7 +119,7 @@ export class ExtractorService {
      * @param extractor - Extractor to remove.
      * @returns Whether the extractor was removed.
      */
-    remove(extractor: Extractor): Result<boolean, Error> {
-        return OK(this.#extractorRegistry.remove(extractor))
+    remove(extractor: Extractor): boolean {
+        return this.#extractorRegistry.remove(extractor)
     }
 }

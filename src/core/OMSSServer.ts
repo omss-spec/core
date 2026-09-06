@@ -39,7 +39,7 @@ export class OMSSServer {
 
         this.hooks = new HookService<OMSSHooks>(hooksRegistry)
         this.extractors = new ExtractorService(extractorRegistry, hooksRegistry)
-        this.plugins = new PluginService(this, pluginRegistry, hooksRegistry)
+        this.plugins = new PluginService(pluginRegistry, hooksRegistry)
         this.providers = new ProviderService(providerRegistry, hooksRegistry)
         this.sources = new SourceService(this, providerRegistry, hooksRegistry, this.extractors)
     }

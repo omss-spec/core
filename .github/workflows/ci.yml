@@ -14,14 +14,22 @@ concurrency:
     group: build-and-test-${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 
+env:
+    PRIMARY_NODE_VERSION: 24
+
 jobs:
     build-and-test:
         if: github.head_ref != 'main'
-        name: Build, Lint, Audit & Test
+        name: Build, Lint, Audit & Test (Node ${{ matrix.node-version }})
         runs-on: ubuntu-latest
         environment: testing
 
         timeout-minutes: 10
+
+        strategy:
+            fail-fast: false
+            matrix:
+                node-version: [20, 22, 24]
 
         steps:
             - name: Checkout repository
@@ -30,40 +38,45 @@ jobs:
             - name: Set up Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: 24
+                  node-version: ${{ matrix.node-version }}
                   cache: npm
 
             - name: Install dependencies
               run: npm ci
 
             - name: Lint
+              if: matrix.node-version == env.PRIMARY_NODE_VERSION
               run: npm run lint
 
             - name: Format check
+              if: matrix.node-version == env.PRIMARY_NODE_VERSION
               run: npm run format:check
 
             - name: Security audit
+              if: matrix.node-version == env.PRIMARY_NODE_VERSION
               run: npm audit --audit-level=high
 
             - name: Build
+              if: matrix.node-version != env.PRIMARY_NODE_VERSION
+              run: npm run build
+
+            - name: Build (with bundle analysis)
+              if: matrix.node-version == env.PRIMARY_NODE_VERSION
               run: npm run build
               env:
                   CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-            - name: Run tests
-              run: npx vitest run --coverage --reporter=junit --outputFile=test-report.junit.xml
-              continue-on-error: true
+            - name: Run tests with coverage
+              run: npx vitest run --coverage --reporter=junit --reporter=default --outputFile=test-report.junit.xml
 
             - name: Upload test results to Codecov
-              if: ${{ !cancelled() }}
+              if: ${{ !cancelled() && matrix.node-version == env.PRIMARY_NODE_VERSION }}
               uses: codecov/test-results-action@v1
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
 
             - name: Upload coverage reports to Codecov
+              if: ${{ !cancelled() && matrix.node-version == env.PRIMARY_NODE_VERSION }}
               uses: codecov/codecov-action@v5
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
-
-            - name: Run tests but fail if coverage is below 100%
-              run: npm run test

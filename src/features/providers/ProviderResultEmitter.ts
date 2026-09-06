@@ -203,9 +203,15 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          *
          * @param action - A custom event name (e.g. "cache.hit").
          * @param data - Arbitrary payload associated with the event.
+         *
+         * @remarks
+         * The `Object.keys(this)` guard below only rejects names that collide
+         * with this emitter's own methods (`source`, `done`, `emit`, ...). It
+         * does not check against other, unrelated lifecycle hook names
+         * registered elsewhere on the server.
          */
         emit(action: string, data: unknown): void {
-            // action cannot be whitespace or another hook name
+            // action cannot be whitespace or collide with this emitter's own method names
             if (/\s/.test(action) || Object.keys(this).includes(action)) {
                 return
             }

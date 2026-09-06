@@ -18,7 +18,7 @@ describe('PluginService', () => {
         hookRegistry.add('beforePluginRegister', before)
         hookRegistry.add('afterPluginRegister', after)
 
-        const service = new PluginService(server, pluginRegistry, hookRegistry)
+        const service = new PluginService(pluginRegistry, hookRegistry)
 
         const plugin = async () => {}
 
@@ -41,7 +41,7 @@ describe('PluginService', () => {
 
         hookRegistry.add('pluginRegisterFailed', failed)
 
-        const service = new PluginService(server, pluginRegistry, hookRegistry)
+        const service = new PluginService(pluginRegistry, hookRegistry)
 
         const plugin = async () => {}
 
@@ -64,7 +64,7 @@ describe('PluginService', () => {
 
         hookRegistry.add('pluginRegisterFailed', failed)
 
-        const service = new PluginService(server, pluginRegistry, hookRegistry)
+        const service = new PluginService(pluginRegistry, hookRegistry)
 
         const plugin = async () => {
             throw new Error('boom')
@@ -87,7 +87,7 @@ describe('PluginService', () => {
         const pluginRegistry = new PluginRegistry(server)
         const hookRegistry = new HookRegistry<OMSSHooks>()
 
-        const service = new PluginService(server, pluginRegistry, hookRegistry)
+        const service = new PluginService(pluginRegistry, hookRegistry)
 
         const pluginA = async () => {}
         const pluginB = async () => {}

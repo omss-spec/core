@@ -1,0 +1,26 @@
+{
+    "permissions": {
+        "deny": [
+            "Read(.env)",
+            "Read(.env.*)",
+            "Edit(.env)",
+            "Edit(.env.*)",
+            "Write(.env)",
+            "Write(.env.*)",
+            "Read(**/.env)",
+            "Read(**/.env.*)",
+            "Edit(**/.env)",
+            "Edit(**/.env.*)",
+            "Write(**/.env)",
+            "Write(**/.env.*)",
+            "Read(**/*.pem)",
+            "Read(**/*.key)",
+            "Read(**/*credentials*)",
+            "Read(**/*secret*)",
+            "Bash(*.env*)"
+        ],
+        "allow": ["Bash(git log*)"],
+        "ask": ["Bash(git *)"],
+        "defaultMode": "default"
+    }
+}
