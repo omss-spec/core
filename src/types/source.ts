@@ -21,11 +21,17 @@ export type GetSourcesOptions = {
     abortSignal?: AbortSignal
     /**
      * Overrides the service-wide {@link SourceService.cleaningFunction} for this call only.
+     *
+     * @remarks
+     * Supplying this disables request coalescing for this call — see {@link SourceService.getSources}.
      */
     cleaningFunction?: CleaningFunction
     /**
      * A hook service scoped to this single request, letting callers observe
      * (or clean up after) exactly one `getSources()` call instead of every one.
+     *
+     * @remarks
+     * Supplying this disables request coalescing for this call — see {@link SourceService.getSources}.
      */
     providerHookService?: HookService<ProviderHooks>
 }

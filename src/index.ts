@@ -16,6 +16,7 @@
  * More information: https://github.com/omss-spec/core
  *
  * @packageDocumentation
- * @author OMSS Foundation <https://github.com/omss-spec> or <206556099+An0n-01@users.noreply.github.com>
+ * @author OMSS Foundation <https://github.com/omss-spec>
+ * @author An0n-00 <https://github.com/An0n-00>
  */
 export * from './public-api.js'

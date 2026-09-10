@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { OMSSSourceGatheringError } from '@/utils/error.js'
 import { createProvider, createResolver, createSourceService } from '../../utils.js'
+import { createHookService } from '@/features/hooks/HookService.js'
+import { type ProviderHooks } from '@/types/hooks.js'
 
 describe('SourceService.getSources', () => {
     it('returns ERR for an invalid OMSS id', async () => {
@@ -85,6 +87,68 @@ describe('SourceService.getSources', () => {
         expect(r3.ok).toBe(true)
         // All three share one in-flight promise, so provider ran only once
         expect(resolveCount).toBe(1)
+    })
+
+    it('does not coalesce concurrent requests that each supply their own providerHookService', async () => {
+        const { service, providerRegistry } = createSourceService()
+
+        let resolveCount = 0
+        const resolver = createResolver({ value: 'meta' })
+        Object.assign(resolver, { namespace: 'tmdb' })
+        const provider = createProvider(resolver, async (_req, result) => {
+            resolveCount++
+            result.source({ type: 'hls', url: 'https://example.com/s.m3u8', header: {}, streamable: true, quality: 'HD' })
+            return result.done()
+        })
+        await providerRegistry.add(provider)
+
+        const hooksA = createHookService<ProviderHooks>()
+        const hooksB = createHookService<ProviderHooks>()
+        const sourceEventsA: string[] = []
+        const sourceEventsB: string[] = []
+        hooksA.add('source', ({ source }) => {
+            sourceEventsA.push(source.url)
+        })
+        hooksB.add('source', ({ source }) => {
+            sourceEventsB.push(source.url)
+        })
+
+        const [r1, r2] = await Promise.all([service.getSources('tmdb:12345', { providerHookService: hooksA }), service.getSources('tmdb:12345', { providerHookService: hooksB })])
+
+        expect(r1.ok).toBe(true)
+        expect(r2.ok).toBe(true)
+        // Each caller's own providerHookService must receive its own events —
+        // coalescing would have made one caller's hook service never fire.
+        expect(resolveCount).toBe(2)
+        expect(sourceEventsA).toHaveLength(1)
+        expect(sourceEventsB).toHaveLength(1)
+    })
+
+    it('does not coalesce concurrent requests that each supply their own cleaningFunction', async () => {
+        const { service, providerRegistry } = createSourceService()
+
+        let resolveCount = 0
+        const resolver = createResolver({ value: 'meta' })
+        Object.assign(resolver, { namespace: 'tmdb' })
+        const provider = createProvider(resolver, async (_req, result) => {
+            resolveCount++
+            result.source({ type: 'hls', url: 'https://example.com/s.m3u8', header: {}, streamable: true, quality: 'HD' })
+            return result.done()
+        })
+        await providerRegistry.add(provider)
+
+        const [r1, r2] = await Promise.all([
+            service.getSources('tmdb:12345', { cleaningFunction: (obj) => ({ ...obj, url: obj.url + '?caller=a' }) }),
+            service.getSources('tmdb:12345', { cleaningFunction: (obj) => ({ ...obj, url: obj.url + '?caller=b' }) }),
+        ])
+
+        expect(resolveCount).toBe(2)
+        expect(r1.ok).toBe(true)
+        expect(r2.ok).toBe(true)
+        if (r1.ok && r2.ok) {
+            expect(r1.value.sources[0]?.url).toContain('?caller=a')
+            expect(r2.value.sources[0]?.url).toContain('?caller=b')
+        }
     })
 
     it('cleaningFunction is applied to source URLs', async () => {

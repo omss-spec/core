@@ -115,38 +115,48 @@ export function createSourceCore(omssServer: OMSSServer, providerRegistry: Provi
             }
 
             /**
+             * The outcome of running a single provider through {@link resolveForProvider}.
+             *
+             * Distinguishes a provider that never actually ran (`supported: false`,
+             * because `supportsId()` said no) from one that did (`supported: true`,
+             * carrying its real {@link ProviderResult}) — so a merely-inapplicable
+             * provider can never be mistaken for a successful one during aggregation.
+             */
+            type ProviderRunOutcome = { supported: false; error: OMSSProviderError } | { supported: true; result: ProviderResult | Result<never, OMSSSourceGatheringError> }
+
+            /**
              * Resolve sources for a single provider.
              *
              * @param provider - Provider to execute.
-             * @returns Provider result or a source gathering error.
+             * @returns Whether the provider actually ran, and its result if so.
              */
-            const resolveForProvider = async (provider: UnknownProvider): Promise<ProviderResult | Result<never, OMSSSourceGatheringError>> => {
+            const resolveForProvider = async (provider: UnknownProvider): Promise<ProviderRunOutcome> => {
                 if (signal.aborted) {
-                    return ERR(new OMSSSourceGatheringError('Operation aborted'))
+                    return { supported: true, result: ERR(new OMSSSourceGatheringError('Operation aborted')) }
                 }
 
                 const supportsId = await provider.supportsId(parsed.value)
                 if (!supportsId) {
-                    return OK({ sources: [], subtitles: [], errors: [new OMSSProviderError(`Provider "${provider.id}" did not support this id: "${parsed.value.raw}"`)] })
+                    return { supported: false, error: new OMSSProviderError(`Provider "${provider.id}" did not support this id: "${parsed.value.raw}"`) }
                 }
 
                 if (signal.aborted) {
-                    return ERR(new OMSSSourceGatheringError('Operation aborted'))
+                    return { supported: true, result: ERR(new OMSSSourceGatheringError('Operation aborted')) }
                 }
 
                 const metaResult = await getResolvedMeta(provider)
 
                 if (!metaResult.ok) {
-                    return metaResult
+                    return { supported: true, result: metaResult }
                 }
 
                 if (signal.aborted) {
-                    return ERR(new OMSSSourceGatheringError('Operation aborted'))
+                    return { supported: true, result: ERR(new OMSSSourceGatheringError('Operation aborted')) }
                 }
 
                 const resultEmitter = createProviderResultEmitter(provider, providerHookRegistry.__getRegistry(), cleaningFunction, parsed.value)
 
-                return provider.getSources(
+                const result = await provider.getSources(
                     {
                         utils: {
                             omssId: parsed.value,
@@ -157,18 +167,16 @@ export function createSourceCore(omssServer: OMSSServer, providerRegistry: Provi
                     },
                     resultEmitter
                 )
+
+                return { supported: true, result }
             }
 
             const settled = await Promise.allSettled(providers.map((provider) => resolveForProvider(provider)))
 
-            if (signal.aborted) {
-                return ERR(new OMSSSourceGatheringError('Operation aborted'))
-            }
-
             const allSources: Source[] = []
             const allSubtitles: Subtitle[] = []
             const unexpectedErrors: unknown[] = []
-            const omssErrors: Array<Extract<ProviderResult, { ok: false }>['error'] | OMSSSourceGatheringError> = []
+            const omssErrors: Array<OMSSProviderError | OMSSSourceGatheringError> = []
             let hasSuccess = false
 
             for (const item of settled) {
@@ -182,7 +190,15 @@ export function createSourceCore(omssServer: OMSSServer, providerRegistry: Provi
                     continue
                 }
 
-                const res = item.value
+                const outcome = item.value
+
+                if (!outcome.supported) {
+                    // The provider never ran, so it doesn't get to count as a success.
+                    omssErrors.push(outcome.error)
+                    continue
+                }
+
+                const res = outcome.result
 
                 if (res.ok) {
                     hasSuccess = true

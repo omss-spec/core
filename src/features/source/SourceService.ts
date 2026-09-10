@@ -44,6 +44,12 @@ export interface SourceService {
      * `omssId` and `providerId` share the same in-flight Promise until the
      * request settles.
      *
+     * @remarks
+     * Coalescing only applies when neither `options.providerHookService` nor
+     * `options.cleaningFunction` is supplied — otherwise a "losing" concurrent
+     * caller would silently have its per-request override ignored, so that
+     * call runs independently instead of sharing the in-flight request.
+     *
      * @param omssId - OMSS identifier such as `"tmdb:12345"`.
      * @param options - Optional source gathering parameters.
      * @returns Aggregated provider results or a source gathering error.
@@ -101,11 +107,14 @@ export function createSourceService(omssServer: OMSSServer, providerRegistry: Pr
             providerId: options.providerId,
         })
 
-        const inFlightKey = getInFlightKey(omssId, options.providerId)
+        const runCore = () => core.getSources(omssId, options, options.providerHookService ?? createHookService<ProviderHooks>(), options.cleaningFunction ?? cleaningFunction)
 
-        const result = await inFlight.run(inFlightKey, () =>
-            core.getSources(omssId, options, options.providerHookService ?? createHookService<ProviderHooks>(), options.cleaningFunction ?? cleaningFunction)
-        )
+        // Only coalesce concurrent requests when neither per-request override is
+        // supplied — otherwise a "losing" caller's providerHookService/cleaningFunction
+        // would silently never run.
+        const canCoalesce = options.providerHookService === undefined && options.cleaningFunction === undefined
+
+        const result = canCoalesce ? await inFlight.run(getInFlightKey(omssId, options.providerId), runCore) : await runCore()
 
         if (result.ok) {
             await hookRegistry.run('afterGetSources', {
@@ -115,15 +124,15 @@ export function createSourceService(omssServer: OMSSServer, providerRegistry: Pr
             })
 
             return middleware.run('afterGetSources', { omssId, options, result }, () => Promise.resolve(result))
+        } else {
+            await hookRegistry.run('getSourcesFailed', {
+                omssId,
+                providerId: options.providerId,
+                error: result.error,
+            })
+
+            return result
         }
-
-        await hookRegistry.run('getSourcesFailed', {
-            omssId,
-            providerId: options.providerId,
-            error: result.error,
-        })
-
-        return result
     }
 
     return {
