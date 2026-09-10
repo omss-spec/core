@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import OMSSServer from '@/core/server.js'
+import OMSSServer from '@/core/OMSSServer.js'
 import { OMSSServerError } from '@/utils/error.js'
 import { createOMSSServerConfig } from '../utils.js'
 

@@ -3,6 +3,10 @@
     "version": "0.0.2-beta.3",
     "description": "Official TypeScript runtime and plugin orchestrator to create all kinds of OMSS based services!",
     "type": "module",
+    "sideEffects": false,
+    "workspaces": [
+        "example"
+    ],
     "main": "./dist/index.cjs",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.mts",
@@ -27,8 +31,11 @@
     "scripts": {
         "build": "tsdown",
         "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
         "dev": "tsdown --watch",
-        "example": "tsx example/example.ts",
+        "example": "tsdown -l silent && npm run example --workspace=example",
         "test": "vitest run",
         "prepublishOnly": "npm run test && npm run build"
     },
@@ -44,17 +51,21 @@
     },
     "devDependencies": {
         "@codecov/rollup-plugin": "^2.0.1",
+        "@eslint/js": "^10.0.1",
         "@types/node": "^22.20.0",
         "@vitest/coverage-v8": "^4.1.9",
+        "eslint": "^10.9.1",
+        "eslint-config-prettier": "^10.1.8",
         "prettier": "^3.8.4",
         "tsdown": "^0.22.3",
-        "tsx": "^4.22.4",
         "typescript": "^5.8.0",
+        "typescript-eslint": "^8.69.0",
         "vitest": "^4.1.9"
     },
     "engines": {
-        "node": ">=20"
+        "node": ">=22"
     },
+    "packageManager": "npm@11.11.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/omss-spec/core.git"

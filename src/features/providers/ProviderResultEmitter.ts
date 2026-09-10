@@ -1,24 +1,24 @@
 import {
-    EmittedSource,
-    EmittedSubtitle,
-    OMSSProviderResult,
-    ProviderResult,
-    ProviderResultEmitter,
-    Source,
-    SourceQuality,
-    SourceTypes,
-    Subtitle,
-    SubtitleFormat,
-    UnknownProvider,
+    type EmittedSource,
+    type EmittedSubtitle,
+    type OMSSProviderResult,
+    type ProviderResult,
+    type ProviderResultEmitter,
+    type Source,
+    type SourceQuality,
+    type SourceTypes,
+    type Subtitle,
+    type SubtitleFormat,
+    type UnknownProvider,
 } from '@/types/provider.js'
 import { OMSSProviderError } from '@/utils/error.js'
-import { Result } from '@/types/utils.js'
+import { type Result } from '@/types/utils.js'
 import { ERR, OK } from '@/utils/utils.js'
-import { HookRegistry } from '@/features/hooks/HookRegistry.js'
-import { ProviderHooks } from '@/types/hooks.js'
+import { type HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { type ProviderHooks } from '@/types/hooks.js'
 import { DASH_REGEX, HLS_REGEX, MKV_REGEX, MP4_REGEX, SRT_REGEX, VTT_REGEX } from '@/utils/regexp.js'
-import { CleaningFunction } from '@/types/source.js'
-import { ParsedOMSSId } from '@/types/resolver.js'
+import { type CleaningFunction } from '@/types/source.js'
+import { type ParsedOMSSId } from '@/types/resolver.js'
 
 /**
  * Creates a fresh `ProviderResultEmitter` instance scoped to a single
@@ -203,13 +203,19 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          *
          * @param action - A custom event name (e.g. "cache.hit").
          * @param data - Arbitrary payload associated with the event.
+         *
+         * @remarks
+         * The `Object.keys(this)` guard below only rejects names that collide
+         * with this emitter's own methods (`source`, `done`, `emit`, ...). It
+         * does not check against other, unrelated lifecycle hook names
+         * registered elsewhere on the server.
          */
         emit(action: string, data: unknown): void {
-            // action cannot be whitespace or another hook name
+            // action cannot be whitespace or collide with this emitter's own method names
             if (/\s/.test(action) || Object.keys(this).includes(action)) {
                 return
             }
-            hookReg.run(action, { data, provider, id, timestamp: new Date().toISOString() })
+            void hookReg.run(action, { data, provider, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -219,7 +225,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          * @param args - Values to log, forwarded as-is (same semantics as `console.debug`).
          */
         debug(...args: unknown[]): void {
-            hookReg.run('debug', { provider, args, id, timestamp: new Date().toISOString() })
+            void hookReg.run('debug', { provider, args, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -229,7 +235,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          * @param args - Values to log.
          */
         info(...args: unknown[]): void {
-            hookReg.run('info', { provider, args, id, timestamp: new Date().toISOString() })
+            void hookReg.run('info', { provider, args, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -239,12 +245,12 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          * @param args - Values to log.
          */
         warn(...args: unknown[]): void {
-            hookReg.run('warn', { provider, args, id, timestamp: new Date().toISOString() })
+            void hookReg.run('warn', { provider, args, id, timestamp: new Date().toISOString() })
         },
 
         /**
          * Records a NON-fatal error. The provider continues executing after
-         * calling this — use `fatal()` instead if the provider cannot continue.
+         * calling this - use `fatal()` instead if the provider cannot continue.
          *
          * The error is accumulated and returned to the requestor as part of
          * the `diagnostics`/`errors` field once `done()` is called, allowing
@@ -255,7 +261,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          */
         error(error: OMSSProviderError): void {
             errors.push(error)
-            hookReg.run('error', { provider, error, id, timestamp: new Date().toISOString() })
+            void hookReg.run('error', { provider, error, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -307,7 +313,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
 
             sources.push(fullSource)
 
-            hookReg.run('source', {
+            void hookReg.run('source', {
                 provider,
                 source: fullSource,
                 id,
@@ -330,7 +336,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
             subtitle.header = header
             const fullSub = { ...subtitle, provider: { id: provider.id, name: provider.name } }
             subtitles.push(fullSub)
-            hookReg.run('subtitle', { provider, subtitle: fullSub, id, timestamp: new Date().toISOString() })
+            void hookReg.run('subtitle', { provider, subtitle: fullSub, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -344,7 +350,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
 
             const finalErr = new OMSSProviderError(accumulatedError.message, { cause: accumulatedError })
 
-            hookReg.run('error', { provider, error: finalErr, id, timestamp: new Date().toISOString() })
+            void hookReg.run('error', { provider, error: finalErr, id, timestamp: new Date().toISOString() })
 
             return ERR(finalErr)
         },
@@ -363,7 +369,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
                 errors,
             }
 
-            hookReg.run('done', { provider, result, id, timestamp: new Date().toISOString() })
+            void hookReg.run('done', { provider, result, id, timestamp: new Date().toISOString() })
 
             return OK(result)
         },

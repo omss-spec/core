@@ -3,29 +3,28 @@
  *
  * This file is overlapping into other test files and is not part of the public API or the /tests/utils folder.
  */
-import OMSSServer from '@/core/server.js'
-import { OMSSConfig } from '@/types/config.js'
-import { AsyncDeduper } from '@/utils/AsyncDeduper.js'
-import { MiddlewareRunner } from '@/utils/middleware.js'
-import { MiddlewareOperationMap } from '@/types/middleware.js'
-import { Extractor } from '@/types/extractor.js'
+import OMSSServer from '@/core/OMSSServer.js'
+import { type OMSSConfig } from '@/types/config.js'
+import { createAsyncDeduper as createAsyncDeduperUtil } from '@/utils/AsyncDeduper.js'
+import { createMiddlewareRunner } from '@/utils/MiddlewareRunner.js'
+import { type MiddlewareOperationMap } from '@/types/middleware.js'
+import { type Extractor } from '@/types/extractor.js'
 import { vi } from 'vitest'
 import { ERR, OK } from '@/utils/utils.js'
-import { OMSSExtractorError, OMSSResolverError } from '@/utils/error.js'
-import { BaseResolver } from '@/features/resolvers/BaseResolver.js'
-import { OMSSId, ParsedOMSSId, ResolverExecutionContext, ResolverResult } from '@/types/resolver.js'
-import { Result } from '@/types/utils.js'
-import { OMSSProvider, ProviderResultEmitter } from '@/types/provider.js'
-import { ProviderService } from '@/features/providers/ProviderService.js'
-import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
-import { HookRegistry } from '@/features/hooks/HookRegistry.js'
-import { OMSSHooks, ProviderHooks } from '@/types/hooks.js'
+import { OMSSExtractorError, type OMSSResolverError } from '@/utils/error.js'
+import { type OMSSId, type OMSSResolver, type ParsedOMSSId, type ResolverExecutionContext, type ResolverResult } from '@/types/resolver.js'
+import { type Result } from '@/types/utils.js'
+import { type OMSSProvider } from '@/types/provider.js'
+import { createProviderService as createProviderServiceInternal } from '@/features/providers/ProviderService.js'
+import { createProviderRegistry } from '@/features/providers/ProviderRegistry.js'
+import { createHookRegistry } from '@/features/hooks/HookRegistry.js'
+import { type OMSSHooks, type ProviderHooks } from '@/types/hooks.js'
 import { createProviderResultEmitter } from '@/features/providers/ProviderResultEmitter.js'
-import { ExtractorService } from '@/features/extractors/ExtractorService.js'
-import { ExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
-import { SourceCore } from '@/features/source/SourceCore.js'
-import { SourceService } from '@/features/source/SourceService.js'
-import { HookService } from '@/features/hooks/HookService.js'
+import { createExtractorService } from '@/features/extractors/ExtractorService.js'
+import { createExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
+import { createSourceCore as createSourceCoreInternal } from '@/features/source/SourceCore.js'
+import { createSourceService as createSourceServiceInternal } from '@/features/source/SourceService.js'
+import { createHookService } from '@/features/hooks/HookService.js'
 
 /**
  * Create a new {@link OMSSServer} instance.
@@ -47,13 +46,13 @@ export const createOMSSServerConfig = (overrides: Partial<OMSSConfig> = {}): OMS
  * @typeParam T - The type of the deduplication key.
  * @typeParam V - The type of the deduplicated items.
  */
-export const createAsyncDeduper = <T = string, V = number>() => new AsyncDeduper<T, V>()
+export const createAsyncDeduper = <T = string, V = number>() => createAsyncDeduperUtil<T, V>()
 
 /**
  * Create a new {@link MiddlewareRunner} instance.
  * @typeParam T - The type of the middleware operation map.
  */
-export const createRunner = <T extends MiddlewareOperationMap>() => new MiddlewareRunner<T>()
+export const createRunner = <T extends MiddlewareOperationMap>() => createMiddlewareRunner<T>()
 
 /**
  * Create an {@link Extractor} with {@link vi.fn} functions.
@@ -72,7 +71,7 @@ export function createExtractor(matches = true): Extractor {
 const DEFAULT_RESOLVER_RESPONSE = { value: '' }
 
 /**
- * Create a test {@link BaseResolver}.
+ * Create a test {@link OMSSResolver}.
  *
  * @typeParam T - The type of the resolved value.
  * @param response - The default response returned by the resolver.
@@ -82,25 +81,23 @@ const DEFAULT_RESOLVER_RESPONSE = { value: '' }
 export function createResolver<T extends object = typeof DEFAULT_RESOLVER_RESPONSE>(
     response: T = DEFAULT_RESOLVER_RESPONSE as T,
     resolve: (id: ParsedOMSSId, ctx: ResolverExecutionContext) => Promise<ResolverResult<T>> = async () => OK(response),
-    overrides: Partial<BaseResolver<T>> = {}
-): BaseResolver<T> {
-    const resolveImpl = resolve
-
-    class Resolver extends BaseResolver<T> {
+    overrides: Partial<OMSSResolver<T>> = {}
+): OMSSResolver<T> {
+    const resolver: OMSSResolver<T> = {
         /** The resolver name. */
-        name = 'test-resolver'
+        name: 'test-resolver',
 
         /** The resolver namespace. */
-        namespace = 'test'
+        namespace: 'test',
 
         /** ID converters supported by the resolver. */
-        converter = new Map<string, (id: OMSSId, ctx: ResolverExecutionContext) => Promise<Result<OMSSId, OMSSResolverError>>>()
+        converter: new Map<string, (id: OMSSId, ctx: ResolverExecutionContext) => Promise<Result<OMSSId, OMSSResolverError>>>(),
 
         /** Resolve an ID. */
-        resolve = resolveImpl
+        resolve,
     }
 
-    return Object.assign(new Resolver(), overrides)
+    return Object.assign(resolver, overrides)
 }
 
 /**
@@ -111,44 +108,42 @@ export function createResolver<T extends object = typeof DEFAULT_RESOLVER_RESPON
  * @param getSources - Custom source retrieval implementation.
  * @param overrides - Properties to override on the provider instance.
  */
-export function createProvider<R extends BaseResolver<unknown> = ReturnType<typeof createResolver>>(
+export function createProvider<R extends OMSSResolver<unknown> = ReturnType<typeof createResolver>>(
     resolver: R = createResolver() as R,
     getSources: OMSSProvider<R>['getSources'] = async (_req, result) => result.done(),
     overrides: Partial<OMSSProvider<R>> = {}
 ): OMSSProvider<R> {
-    const getSourcesImpl = getSources
-
-    class Provider implements OMSSProvider<R> {
+    const provider: OMSSProvider<R> = {
         /** The provider ID. */
-        id = 'test-provider'
+        id: 'test-provider',
 
         /** The provider name. */
-        name = 'Test Provider'
+        name: 'Test Provider',
 
         /** Whether the provider is enabled. */
-        enabled = true
+        enabled: true,
 
         /** The resolver used by this provider. */
-        resolver = resolver
+        resolver,
 
         /** Retrieve sources for a request. */
-        getSources = getSourcesImpl
+        getSources,
 
         /** Determine whether the provider supports the given ID. */
-        supportsId: OMSSProvider<R>['supportsId'] = async () => true
+        supportsId: async () => true,
     }
 
-    return Object.assign(new Provider(), overrides)
+    return Object.assign(provider, overrides)
 }
 
 /**
  * Create a new {@link ProviderService} and its backing registries for testing.
  */
 export const createProviderService = () => {
-    const providerRegistry = new ProviderRegistry()
-    const omssHookRegistry = new HookRegistry<OMSSHooks>()
+    const providerRegistry = createProviderRegistry()
+    const omssHookRegistry = createHookRegistry<OMSSHooks>()
 
-    const service = new ProviderService(providerRegistry, omssHookRegistry)
+    const service = createProviderServiceInternal(providerRegistry, omssHookRegistry)
 
     return { service, providerRegistry, omssHookRegistry }
 }
@@ -157,17 +152,17 @@ export const createProviderService = () => {
  * Create a new {@link ProviderResultEmitter} for testing.
  * @param hookRegistry - Optional hook registry to use for the emitter.
  */
-export const createProviderEmitter = (hookRegistry = new HookRegistry<ProviderHooks>()) => createProviderResultEmitter(createProvider(), hookRegistry, (obj) => obj, {} as ParsedOMSSId)
+export const createProviderEmitter = (hookRegistry = createHookRegistry<ProviderHooks>()) => createProviderResultEmitter(createProvider(), hookRegistry, (obj) => obj, {} as ParsedOMSSId)
 
 /**
  * Create a new {@link SourceCore} instance for testing.
  */
 export const createSourceCore = () => {
     const server = createServer()
-    const registry = new ProviderRegistry()
-    const extractorService = new ExtractorService(new ExtractorRegistry(), new HookRegistry<OMSSHooks>())
-    const core = new SourceCore(server, registry, extractorService)
-    const providerHookService = new HookService<ProviderHooks>()
+    const registry = createProviderRegistry()
+    const extractorService = createExtractorService(createExtractorRegistry(), createHookRegistry<OMSSHooks>())
+    const core = createSourceCoreInternal(server, registry, extractorService)
+    const providerHookService = createHookService<ProviderHooks>()
     const noopCleaner = (obj: { url: string; header: Record<string, string> }) => obj
 
     return { core, registry, providerHookService, noopCleaner }
@@ -178,11 +173,11 @@ export const createSourceCore = () => {
  */
 export const createSourceService = () => {
     const server = createServer()
-    const providerRegistry = new ProviderRegistry()
-    const hookRegistry = new HookRegistry<OMSSHooks>()
-    const extractorService = new ExtractorService(new ExtractorRegistry(), hookRegistry)
+    const providerRegistry = createProviderRegistry()
+    const hookRegistry = createHookRegistry<OMSSHooks>()
+    const extractorService = createExtractorService(createExtractorRegistry(), hookRegistry)
 
-    const service = new SourceService(server, providerRegistry, hookRegistry, extractorService)
+    const service = createSourceServiceInternal(server, providerRegistry, hookRegistry, extractorService)
 
     return { service, providerRegistry, hookRegistry }
 }

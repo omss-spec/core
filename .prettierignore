@@ -1,0 +1,5 @@
+# Generated / vendor files - not hand-maintained, don't reformat
+package-lock.json
+typedoc.json
+dist
+coverage

@@ -1,16 +1,16 @@
-import OMSSServer from '@/core/server.js'
-import { HookRegistry } from '@/features/hooks/HookRegistry.js'
-import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
-import { SourceCore } from '@/features/source/SourceCore.js'
+import type OMSSServer from '@/core/OMSSServer.js'
+import { type HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { type ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
+import { createSourceCore } from '@/features/source/SourceCore.js'
 import type { CleaningFunction, GatheredSources, GetSourcesOptions, SourceServiceMiddleware, SourceServiceOperations } from '@/types/source.js'
 import type { OMSSId } from '@/types/resolver.js'
 import type { Result } from '@/types/utils.js'
-import { OMSSSourceGatheringError } from '@/utils/error.js'
-import { AsyncDeduper } from '@/utils/AsyncDeduper.js'
-import { MiddlewareRunner } from '@/utils/middleware.js'
+import { type OMSSSourceGatheringError } from '@/utils/error.js'
+import { createAsyncDeduper } from '@/utils/AsyncDeduper.js'
+import { createMiddlewareRunner } from '@/utils/MiddlewareRunner.js'
 import type { OMSSHooks, ProviderHooks } from '@/types/hooks.js'
-import { ExtractorService } from '@/features/extractors/ExtractorService.js'
-import { HookService } from '@/features/hooks/HookService.js'
+import { type ExtractorService } from '@/features/extractors/ExtractorService.js'
+import { createHookService } from '@/features/hooks/HookService.js'
 
 /**
  * Public API for resolving sources for media.
@@ -19,45 +19,23 @@ import { HookService } from '@/features/hooks/HookService.js'
  * lifecycle hook dispatching, and request coalescing. The actual source
  * gathering implementation lives in {@link SourceCore}.
  */
-export class SourceService {
-    readonly #hookRegistry: HookRegistry<OMSSHooks>
-    readonly #core: SourceCore
-
+export interface SourceService {
     /**
-     * Middleware runner for SourceService operations.
+     * Get and set the cleaning function used to sanitize source/subtitle URLs and headers.
      */
-    readonly #middleware = new MiddlewareRunner<SourceServiceOperations>()
+    cleaningFunction: CleaningFunction
 
     /**
-     * Deduplicates concurrent getSources requests by request key.
-     */
-    readonly #inFlight = new AsyncDeduper<string, Result<GatheredSources, OMSSSourceGatheringError>>()
-
-    constructor(omssServer: OMSSServer, providerRegistry: ProviderRegistry, hookRegistry: HookRegistry<OMSSHooks>, extractorService: ExtractorService) {
-        this.#hookRegistry = hookRegistry
-        this.#core = new SourceCore(omssServer, providerRegistry, extractorService)
-    }
-
-    public get cleaningFunction(): CleaningFunction {
-        return this.#cleaningFunction
-    }
-
-    public set cleaningFunction(fn: CleaningFunction) {
-        this.#cleaningFunction = fn
-    }
-
-    /**
-     * Register middleware for a SourceService method.
+     * Registers middleware for a SourceService method.
      *
      * Middleware can be used for cross-cutting concerns such as caching,
      * logging, tracing, or metrics.
      *
-     * @param method - Middleware-enabled method name.
-     * @param handler - Middleware handler.
+     * @typeParam TMethod - The middleware-enabled operation to add a handler for.
+     * @param method - The operation name (`"getSources"` or `"afterGetSources"`).
+     * @param handler - The middleware handler.
      */
-    use<TMethod extends keyof SourceServiceOperations>(method: TMethod, handler: SourceServiceMiddleware<TMethod>): void {
-        this.#middleware.use(method, handler)
-    }
+    use<TMethod extends keyof SourceServiceOperations>(method: TMethod, handler: SourceServiceMiddleware<TMethod>): void
 
     /**
      * Fetch sources from all matching providers for an OMSS ID.
@@ -66,18 +44,52 @@ export class SourceService {
      * `omssId` and `providerId` share the same in-flight Promise until the
      * request settles.
      *
+     * @remarks
+     * Coalescing only applies when neither `options.providerHookService` nor
+     * `options.cleaningFunction` is supplied — otherwise a "losing" concurrent
+     * caller would silently have its per-request override ignored, so that
+     * call runs independently instead of sharing the in-flight request.
+     *
      * @param omssId - OMSS identifier such as `"tmdb:12345"`.
      * @param options - Optional source gathering parameters.
      * @returns Aggregated provider results or a source gathering error.
      */
-    async getSources(omssId: OMSSId, options: GetSourcesOptions = {}): Promise<Result<GatheredSources, OMSSSourceGatheringError>> {
-        return this.#middleware.run('getSources', { omssId, options }, () => this.#internalGetSources(omssId, options))
-    }
+    getSources(omssId: OMSSId, options?: GetSourcesOptions): Promise<Result<GatheredSources, OMSSSourceGatheringError>>
+}
+
+/**
+ * Creates a new {@link SourceService}.
+ *
+ * @param omssServer - The OMSS server instance.
+ * @param providerRegistry - The provider registry to look up providers in.
+ * @param hookRegistry - The hook registry used to dispatch source lifecycle hooks.
+ * @param extractorService - The extractor service exposed to providers.
+ */
+export function createSourceService(omssServer: OMSSServer, providerRegistry: ProviderRegistry, hookRegistry: HookRegistry<OMSSHooks>, extractorService: ExtractorService): SourceService {
+    const core = createSourceCore(omssServer, providerRegistry, extractorService)
 
     /**
-     * Get and set the cleaning function for the source core.
+     * Middleware runner for SourceService operations.
      */
-    #cleaningFunction: CleaningFunction = (obj) => obj
+    const middleware = createMiddlewareRunner<SourceServiceOperations>()
+
+    /**
+     * Deduplicates concurrent getSources requests by request key.
+     */
+    const inFlight = createAsyncDeduper<string, Result<GatheredSources, OMSSSourceGatheringError>>()
+
+    let cleaningFunction: CleaningFunction = (obj) => obj
+
+    /**
+     * Build the stable in-flight key for a getSources request.
+     *
+     * @param omssId - OMSS identifier.
+     * @param providerId - Optional provider filter.
+     * @returns Unique in-flight request key.
+     */
+    function getInFlightKey(omssId: OMSSId, providerId?: string): string {
+        return `${omssId}|${providerId ?? ''}`
+    }
 
     /**
      * Internal wrapper around source gathering.
@@ -89,45 +101,55 @@ export class SourceService {
      * @param options - Optional source gathering parameters.
      * @returns Aggregated provider results or a source gathering error.
      */
-    async #internalGetSources(omssId: OMSSId, options: GetSourcesOptions): Promise<Result<GatheredSources, OMSSSourceGatheringError>> {
-        await this.#hookRegistry.run('beforeGetSources', {
+    async function internalGetSources(omssId: OMSSId, options: GetSourcesOptions): Promise<Result<GatheredSources, OMSSSourceGatheringError>> {
+        await hookRegistry.run('beforeGetSources', {
             omssId,
             providerId: options.providerId,
         })
 
-        const inFlightKey = this.#getInFlightKey(omssId, options.providerId)
+        const runCore = () => core.getSources(omssId, options, options.providerHookService ?? createHookService<ProviderHooks>(), options.cleaningFunction ?? cleaningFunction)
 
-        const result = await this.#inFlight.run(inFlightKey, () =>
-            this.#core.getSources(omssId, options, options.providerHookService ?? new HookService<ProviderHooks>(), options.cleaningFunction ?? this.cleaningFunction)
-        )
+        // Only coalesce concurrent requests when neither per-request override is
+        // supplied — otherwise a "losing" caller's providerHookService/cleaningFunction
+        // would silently never run.
+        const canCoalesce = options.providerHookService === undefined && options.cleaningFunction === undefined
+
+        const result = canCoalesce ? await inFlight.run(getInFlightKey(omssId, options.providerId), runCore) : await runCore()
 
         if (result.ok) {
-            await this.#hookRegistry.run('afterGetSources', {
+            await hookRegistry.run('afterGetSources', {
                 omssId,
                 providerId: options.providerId,
                 result: result.value,
             })
 
-            return this.#middleware.run('afterGetSources', { omssId, options, result }, () => Promise.resolve(result))
+            return middleware.run('afterGetSources', { omssId, options, result }, () => Promise.resolve(result))
+        } else {
+            await hookRegistry.run('getSourcesFailed', {
+                omssId,
+                providerId: options.providerId,
+                error: result.error,
+            })
+
+            return result
         }
-
-        await this.#hookRegistry.run('getSourcesFailed', {
-            omssId,
-            providerId: options.providerId,
-            error: result.error,
-        })
-
-        return result
     }
 
-    /**
-     * Build the stable in-flight key for a getSources request.
-     *
-     * @param omssId - OMSS identifier.
-     * @param providerId - Optional provider filter.
-     * @returns Unique in-flight request key.
-     */
-    #getInFlightKey(omssId: OMSSId, providerId?: string): string {
-        return `${omssId}|${providerId ?? ''}`
+    return {
+        get cleaningFunction() {
+            return cleaningFunction
+        },
+
+        set cleaningFunction(fn) {
+            cleaningFunction = fn
+        },
+
+        use(method, handler) {
+            middleware.use(method, handler)
+        },
+
+        async getSources(omssId, options = {}) {
+            return middleware.run('getSources', { omssId, options }, () => internalGetSources(omssId, options))
+        },
     }
 }

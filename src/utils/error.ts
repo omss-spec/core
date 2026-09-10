@@ -1,14 +1,17 @@
 /**
- * Base class for all OMSS framework errors.
- * Use `instanceof OMSSError` to catch any framework error.
- * Always throw a specific subclass, never this directly.
- * Cause is not standardized and may change frequently.
+ * Base class for every @omss/core error.
+ *
+ * @remarks
+ * Use `instanceof OMSSError` to catch any framework error. Always throw/return
+ * a specific subclass, never this class directly. The `cause` field is not
+ * standardized and may change frequently - treat it as debugging context, not a stable API.
  */
 export class OMSSError extends Error {
     /**
-     * Create a new OMSSError.
-     * @param message - Error message
-     * @param options - Additional options for the error
+     * Creates a new {@link OMSSError}.
+     *
+     * @param message - The error message.
+     * @param options - Additional error options (e.g. `cause`).
      */
     constructor(message: string, options?: { cause?: unknown }) {
         super(message, options)
@@ -17,49 +20,61 @@ export class OMSSError extends Error {
 }
 
 /**
- * Returned when an error gets Returned in the OMSSServer class.
+ * Returned/thrown for {@link OMSSServer} construction and decorator errors.
  *
  * @example
- * return ERR(OMSSServerError('config.name must be a non-empty string', {cause: config}))
+ * ```ts
+ * return ERR(new OMSSServerError('config.name must be a non-empty string', { cause: config }))
+ * ```
  */
 export class OMSSServerError extends OMSSError {}
 
 /**
- * Returned during plugin registration or execution.
+ * Returned/thrown during plugin registration or execution.
  *
  * @example
- * return ERR(OMSSPluginError(`Plugin "${name}" is already registered`, { cause: plugin }))
+ * ```ts
+ * return ERR(new OMSSPluginError(`Plugin "${name}" is already registered`, { cause: plugin }))
+ * ```
  */
 export class OMSSPluginError extends OMSSError {}
 
 /**
- * Returned during resolver registration or ID resolution.
+ * Returned/thrown during resolver registration or ID resolution.
  *
  * @example
- * return ERR(OMSSResolverError(`No resolver found for namespace "xyz"`, { cause: rawId }))
+ * ```ts
+ * return ERR(new OMSSResolverError('No resolver found for namespace "xyz"', { cause: rawId }))
+ * ```
  */
 export class OMSSResolverError extends OMSSError {}
 
 /**
- * Returned during provider registration or source fetching.
+ * Returned/thrown during provider registration or source fetching.
  *
  * @example
- * return ERR(OMSSProviderError('Provider must have at least one resolver', { cause: provider }))
+ * ```ts
+ * return ERR(new OMSSProviderError('Provider must have at least one resolver', { cause: provider }))
+ * ```
  */
 export class OMSSProviderError extends OMSSError {}
 
 /**
- * Returned when an extractor fails to extract the media from a host.
+ * Returned/thrown when an extractor fails to extract media from a host.
  *
  * @example
- * return ERR(OMSSExtractor('Failed to extract media from host due to host changes', { cause: html }))
+ * ```ts
+ * return ERR(new OMSSExtractorError('Failed to extract media from host due to host changes', { cause: html }))
+ * ```
  */
 export class OMSSExtractorError extends OMSSError {}
 
 /**
- * Returned when something/several things fail during source gathering.
+ * Returned/thrown when one or more providers fail during source gathering.
  *
  * @example
- * return ERR(OMSSSourceGatheringError('Failed to gather sources', { cause: providerResults }))
+ * ```ts
+ * return ERR(new OMSSSourceGatheringError('Failed to gather sources', { cause: providerResults }))
+ * ```
  */
 export class OMSSSourceGatheringError extends OMSSError {}

@@ -1,1 +1,4 @@
-export { PluginState } from '@/features/plugins/plugin-state.js'
+/**
+ * Exports {@link PluginState} so consumers can compare against `server.plugins.getPluginState()`.
+ */
+export { PluginState } from '@/features/plugins/PluginState.js'

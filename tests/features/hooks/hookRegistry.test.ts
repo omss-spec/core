@@ -1,10 +1,10 @@
-import { TestHooks } from './common.js'
+import { type TestHooks } from './common.js'
 import { describe, expect, it, vi } from 'vitest'
-import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { createHookRegistry } from '@/features/hooks/HookRegistry.js'
 
 describe('HookRegistry', () => {
     it('adds hooks and runs them with provided payload', async () => {
-        const registry = new HookRegistry<TestHooks>()
+        const registry = createHookRegistry<TestHooks>()
         const payload = { value: 1 }
         const fn1 = vi.fn()
         const fn2 = vi.fn()
@@ -21,7 +21,7 @@ describe('HookRegistry', () => {
     })
 
     it('reset clears all registered hooks', async () => {
-        const registry = new HookRegistry<TestHooks>()
+        const registry = createHookRegistry<TestHooks>()
         const fn = vi.fn()
 
         registry.add('onEvent', fn)

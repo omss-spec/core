@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import OMSSServer from '@/core/server.js'
-import { PluginRegistry } from '@/features/plugins/PluginRegistry.js'
-import { PluginState } from '@/features/plugins/plugin-state.js'
+import type OMSSServer from '@/core/OMSSServer.js'
+import { createPluginRegistry } from '@/features/plugins/PluginRegistry.js'
+import { PluginState } from '@/features/plugins/PluginState.js'
 import { OMSSPluginError } from '@/utils/error.js'
 import { createServer } from '../../utils.js'
-import { Result } from '@/types/utils.js'
+import { type Result } from '@/types/utils.js'
 
 describe('PluginRegistry', () => {
     it('registers simple plugins and tracks state', async () => {
         const server = createServer()
-        const registry = new PluginRegistry(server)
+        const registry = createPluginRegistry(server)
 
         const plugin = async (instance: OMSSServer) => {
             expect(instance).toBe(server)
@@ -24,7 +24,7 @@ describe('PluginRegistry', () => {
 
     it('rejects duplicate plugin registration', async () => {
         const server = createServer()
-        const registry = new PluginRegistry(server)
+        const registry = createPluginRegistry(server)
 
         const plugin = async (instance: OMSSServer) => {
             expect(instance).toBe(server)
@@ -45,7 +45,7 @@ describe('PluginRegistry', () => {
 
     it('tracks registration state transitions and registration stack for nested calls', async () => {
         const server = createServer()
-        const registry = new PluginRegistry(server)
+        const registry = createPluginRegistry(server)
 
         const pluginA = async () => {
             // Nested registration should succeed but mark pluginB as registered
@@ -61,7 +61,7 @@ describe('PluginRegistry', () => {
 
     it('wraps non-OMSSPluginError thrown by plugin into OMSSPluginError', async () => {
         const server = createServer()
-        const registry = new PluginRegistry(server)
+        const registry = createPluginRegistry(server)
 
         const plugin = async () => {
             throw new Error('boom')
@@ -79,7 +79,7 @@ describe('PluginRegistry', () => {
 
     it('rejects circular plugin dependencies', async () => {
         const server = createServer()
-        const registry = new PluginRegistry(server)
+        const registry = createPluginRegistry(server)
 
         let resA: Result<PluginState.Registered, OMSSPluginError> | undefined
         let resB: Result<PluginState.Registered, OMSSPluginError> | undefined
@@ -115,7 +115,7 @@ describe('PluginRegistry', () => {
 
     it('resolves plugin options from a factory function', async () => {
         const server = createServer({ name: 'factory-test' })
-        const registry = new PluginRegistry(server)
+        const registry = createPluginRegistry(server)
 
         const plugin = async (_server: OMSSServer, options: { value: string }) => {
             expect(options.value).toBe('factory-test')
@@ -129,7 +129,7 @@ describe('PluginRegistry', () => {
 
     it('preserves OMSSPluginError thrown by plugin', async () => {
         const server = createServer()
-        const registry = new PluginRegistry(server)
+        const registry = createPluginRegistry(server)
 
         const plugin = async () => {
             throw new OMSSPluginError('plugin failed')
@@ -147,7 +147,7 @@ describe('PluginRegistry', () => {
 
     it('removes plugin state after failed registration', async () => {
         const server = createServer()
-        const registry = new PluginRegistry(server)
+        const registry = createPluginRegistry(server)
 
         const plugin = async () => {
             throw new Error('failed')
@@ -161,7 +161,7 @@ describe('PluginRegistry', () => {
 
     it('cleans registration stack after plugin failure', async () => {
         const server = createServer()
-        const registry = new PluginRegistry(server)
+        const registry = createPluginRegistry(server)
 
         const failing = async () => {
             throw new Error('boom')

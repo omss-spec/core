@@ -1,0 +1,15 @@
+{
+    "name": "@omss/core-example",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "example": "tsx example.ts"
+    },
+    "dependencies": {
+        "@omss/core": "file:.."
+    },
+    "devDependencies": {
+        "tsx": "^4.22.4"
+    }
+}

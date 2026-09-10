@@ -1,10 +1,18 @@
 import type { OMSSId, ParsedOMSSId } from '@/types/resolver.js'
 import { OMSSResolverError } from '@/utils/error.js'
-import { Result } from '@/types/utils.js'
+import { type Result } from '@/types/utils.js'
 import { ERR, OK, validateSafeUniqueString } from '@/utils/utils.js'
 
 /**
  * Parses an OMSS ID in the form `namespace:value_1[:value_2[:...]]`.
+ *
+ * @param id - The raw OMSS ID to parse.
+ * @returns The parsed ID, or an error if `id` is malformed.
+ * @example
+ * ```ts
+ * const parsed = parseOMSSId('tmdb:1396:3:7')
+ * // parsed.value === { namespace: 'tmdb', values: ['1396', '3', '7'], raw: 'tmdb:1396:3:7' }
+ * ```
  */
 export function parseOMSSId(id: OMSSId): Result<ParsedOMSSId, OMSSResolverError> {
     if (/\s/.test(id)) {

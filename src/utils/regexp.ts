@@ -12,17 +12,17 @@ export const SAFE_UNIQUE_STRING = new RegExp(`^${SAFE_UNIQUE_STRING_PATTERN}$`)
  * - common media file extensions
  * - extensions followed by URL query strings, fragments, paths, or the end of the URL
  */
-export const HLS_REGEX = /\bhls\b|\.(?:m3u8|ts)(?:$|[\/?#])/i
-export const MP4_REGEX = /\bmp4\b|\.mp4(?:$|[\/?#])/i
-export const DASH_REGEX = /\bdash\b|\.(?:mpd|m4a)(?:$|[\/?#])/i
-export const MKV_REGEX = /\bmkv\b|\.mkv(?:$|[\/?#])/i
-export const VTT_REGEX = /\bvtt\b|\.vtt(?:$|[\/?#])/i
-export const SRT_REGEX = /\bsrt\b|\.srt(?:$|[\/?#])/i
+export const HLS_REGEX = /\bhls\b|\.(?:m3u8|ts)(?:$|[/?#])/i
+export const MP4_REGEX = /\bmp4\b|\.mp4(?:$|[/?#])/i
+export const DASH_REGEX = /\bdash\b|\.(?:mpd|m4a)(?:$|[/?#])/i
+export const MKV_REGEX = /\bmkv\b|\.mkv(?:$|[/?#])/i
+export const VTT_REGEX = /\bvtt\b|\.vtt(?:$|[/?#])/i
+export const SRT_REGEX = /\bsrt\b|\.srt(?:$|[/?#])/i
 
 /**
  * Regex for validating a single catalog entry value.
  *
- * A catalog entry must be either exactly `"*"` (wildcard — provider supports
+ * A catalog entry must be either exactly `"*"` (wildcard - provider supports
  * all IDs in the namespace) or a safe unique string.
  *
  * Mixing `"*"` with other entries in the same catalog array is not allowed

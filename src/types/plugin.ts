@@ -1,22 +1,33 @@
-import OMSSServer from '@/core/server.js'
+import type OMSSServer from '@/core/OMSSServer.js'
 
 /**
- * Plugin with no configuration.
+ * A plugin that takes no configuration.
+ *
+ * @param server - The server instance the plugin is being registered against.
  */
 export type OMSSPluginType = (server: OMSSServer) => Promise<void>
 
 /**
- * Plugin with the required configuration.
+ * A plugin that requires configuration.
+ *
+ * @typeParam T - The shape of the plugin's configuration.
+ * @param server - The server instance the plugin is being registered against.
+ * @param config - The resolved plugin configuration.
  */
 export type OMSSConfiguredPluginType<T> = (server: OMSSServer, config: T) => Promise<void>
 
 /**
- * Any plugin type.
+ * Either plugin shape - configless or configured. Used where the specific
+ * plugin signature isn't known ahead of time (e.g. registries).
  */
 export type UnknownPluginType = OMSSPluginType | OMSSConfiguredPluginType<unknown>
 
 /**
- * Plugin options — either a plain value or a factory that receives
- * the server instance and returns the resolved value.
+ * Options passed to a configured plugin at registration time.
+ *
+ * Either a plain value or a factory that receives the server instance and
+ * returns the resolved value.
+ *
+ * @typeParam T - The shape of the plugin's configuration.
  */
 export type OMSSPluginOptions<T> = T | ((server: OMSSServer) => T)

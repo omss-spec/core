@@ -4,7 +4,7 @@ on:
     workflow_dispatch:
         inputs:
             release_type:
-                description: "Version bump type"
+                description: 'Version bump type'
                 required: true
                 type: choice
                 default: patch
@@ -32,7 +32,7 @@ jobs:
             id-token: write
 
         env:
-            PACKAGE_NAME: "@omss/core"
+            PACKAGE_NAME: '@omss/core'
 
         steps:
             - uses: actions/create-github-app-token@v3
@@ -64,8 +64,8 @@ jobs:
 
             - uses: actions/setup-node@v4
               with:
-                  node-version: "22"
-                  registry-url: "https://registry.npmjs.org"
+                  node-version: '22'
+                  registry-url: 'https://registry.npmjs.org'
                   cache: npm
 
             - name: Update npm for OIDC publishing compatibility

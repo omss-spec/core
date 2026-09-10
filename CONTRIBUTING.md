@@ -25,34 +25,37 @@ This project is governed by the [Code of Conduct](./CODE_OF_CONDUCT.md). By part
 
 1. **Fork** the repository on GitHub.
 2. **Clone** your fork locally:
-   ```sh
-   git clone https://github.com/<your-username>/core.git
-   cd core
-   ```
+    ```sh
+    git clone https://github.com/<your-username>/core.git
+    cd core
+    ```
 3. **Install** dependencies:
-   ```sh
-   npm install
-   ```
+    ```sh
+    npm install
+    ```
 4. **Build** the project:
-   ```sh
-   npm run build
-   ```
+    ```sh
+    npm run build
+    ```
 5. **Run tests:**
-   ```sh
-   npm test
-   ```
+    ```sh
+    npm test
+    ```
 
 ---
 
 ## Development Setup
 
-| Command | Description |
-| :--- | :--- |
-| `npm run build` | Build the project with tsdown |
-| `npm run dev` | Watch mode (rebuilds on file changes) |
-| `npm test` | Run test suite with Vitest |
-| `npm run format` | Format code with Prettier |
-| `npm run example` | Run the example file |
+| Command                | Description                           |
+| :--------------------- | :------------------------------------ |
+| `npm run build`        | Build the project with tsdown         |
+| `npm run dev`          | Watch mode (rebuilds on file changes) |
+| `npm test`             | Run test suite with Vitest            |
+| `npm run lint`         | Lint code with ESLint                 |
+| `npm run lint:fix`     | Lint and auto-fix what's safe to fix  |
+| `npm run format`       | Format code with Prettier             |
+| `npm run format:check` | Check formatting without writing      |
+| `npm run example`      | Run the example file                  |
 
 ---
 
@@ -61,6 +64,7 @@ This project is governed by the [Code of Conduct](./CODE_OF_CONDUCT.md). By part
 ### Reporting Bugs
 
 Please use the **Bug Report** issue template. Include:
+
 - A clear and descriptive title
 - Steps to reproduce the behavior
 - Expected vs. actual behavior
@@ -74,14 +78,15 @@ Please use the **Feature Request** issue template. Describe the problem you are 
 ### Writing Code
 
 1. Create a new branch from `main`:
-   ```sh
-   git checkout -b feat/my-feature
-   ```
-2. Make your changes.
+    ```sh
+    git checkout -b feat/my-feature
+    ```
+2. Make your changes, following the conventions in [AGENTS.md](AGENTS.md) - including its JSDoc/TSDoc standard for any new or changed exported symbol.
 3. Add or update tests to cover your changes.
 4. Run the full test suite: `npm test`.
-5. Format your code: `npm run format`.
-6. Push your branch and open a Pull Request.
+5. Lint your code: `npm run lint` (or `npm run lint:fix` to auto-fix what it can).
+6. Format your code: `npm run format`.
+7. Push your branch and open a Pull Request.
 
 ---
 
@@ -100,6 +105,7 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 **Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`
 
 **Examples:**
+
 ```
 feat(server): add plugin deregistration support
 fix(hooks): prevent circular hook invocation
@@ -111,11 +117,12 @@ docs: update README plugin example
 ## Pull Request Process
 
 1. Ensure all tests pass with 100% coverage: `npm test` (required).
-2. Ensure code is formatted: `npm run format`.
-3. Reference any related issues in the PR description (`Closes #123`).
-4. A maintainer will review your PR. Please be patient — this is a small team.
-5. Address any review feedback by pushing new commits to your branch.
-6. Once approved, a maintainer will merge the PR.
+2. Ensure the code passes lint: `npm run lint` (required - CI enforces this).
+3. Ensure code is formatted: `npm run format` (required - CI enforces this).
+4. Reference any related issues in the PR description (`Closes #123`).
+5. A maintainer will review your PR. Please be patient - this is a small team.
+6. Address any review feedback by pushing new commits to your branch.
+7. Once approved, a maintainer will merge the PR.
 
 ---
 

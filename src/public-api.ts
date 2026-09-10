@@ -1,10 +1,10 @@
 /**
- * Export the OMSSServer class.
+ * Exports the {@link OMSSServer} class, the framework's public entry point.
  */
-export * from '@/core/server.js'
+export * from '@/core/OMSSServer.js'
 
 /**
- * Export public utilities (API's & helpers)
+ * Exports each feature's public runtime API (factories, identity helpers, and other consumer-facing utilities).
  */
 export * from '@/features/hooks/public-api.js'
 export * from '@/features/plugins/public-api.js'
@@ -13,7 +13,7 @@ export * from '@/features/resolvers/public-api.js'
 export * from '@/utils/public-api.js'
 
 /**
- * Export types.
+ * Exports every public type.
  */
 export type * from '@/types/config.js'
 export type * from '@/types/extractor.js'
