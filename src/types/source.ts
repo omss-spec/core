@@ -7,35 +7,50 @@ import { type ProviderHooks } from '@/types/hooks.js'
 import { type HookService } from '@/features/hooks/HookService.js'
 
 /**
- * Options for fetching sources.
+ * Options for `server.sources.getSources()`.
  */
 export type GetSourcesOptions = {
+    /**
+     * Restrict gathering to a single provider ID. If omitted, every registered
+     * provider for the ID's namespace is queried.
+     */
     providerId?: string
+    /**
+     * Abort signal for cancellation. If omitted, the request cannot be aborted.
+     */
     abortSignal?: AbortSignal
+    /**
+     * Overrides the service-wide {@link SourceService.cleaningFunction} for this call only.
+     */
     cleaningFunction?: CleaningFunction
+    /**
+     * A hook service scoped to this single request, letting callers observe
+     * (or clean up after) exactly one `getSources()` call instead of every one.
+     */
     providerHookService?: HookService<ProviderHooks>
 }
 
 /**
- * Object returned by the SourceService.GetSources() method if there has been at least one successful provider.
+ * The aggregated result of a successful `getSources()` call - at least one
+ * provider succeeded.
  */
 export type GatheredSources = {
     /**
-     * Array of sources.
+     * All sources gathered across every successful provider.
      */
     sources: Source[]
     /**
-     * Array of subtitle tracks.
+     * All subtitle tracks gathered across every successful provider.
      */
     subtitles: Subtitle[]
     /**
-     * Array of errors.
+     * Non-fatal errors collected along the way, even though the call as a whole succeeded.
      */
     errors: OMSSError[]
 }
 
 /**
- * Operations supported by the SourceService Middleware Runner with the according context and result types.
+ * Operations supported by {@link SourceService}'s middleware runner, with their context and result types.
  */
 export type SourceServiceOperations = {
     getSources: {
@@ -56,18 +71,32 @@ export type SourceServiceOperations = {
 }
 
 /**
- * Middleware function for the SourceService
+ * Middleware function for a {@link SourceService} operation.
  */
 export type SourceServiceMiddleware<TMethod extends keyof SourceServiceOperations> = MiddlewareHandler<SourceServiceOperations, TMethod>
 
 /**
- * Function to clean a source.
+ * Cleans a source/subtitle URL and its headers before it's emitted.
  *
- * This function will be called between a source is registered (in the ResultEmitter) and the source is emitted.
+ * Called by the {@link ProviderResultEmitter} between a source/subtitle being
+ * registered and it being emitted - typically used to append auth tokens or
+ * strip internal query parameters.
  */
 export type ObjectToClean = {
+    /**
+     * The URL to clean.
+     */
     url: string
+    /**
+     * The headers to clean.
+     */
     header: Record<string, string>
 }
 
+/**
+ * A function that cleans a source/subtitle URL and headers. See {@link ObjectToClean}.
+ *
+ * @param obj - The URL and headers to clean.
+ * @returns The cleaned URL and headers.
+ */
 export type CleaningFunction = (obj: ObjectToClean) => ObjectToClean

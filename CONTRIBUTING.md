@@ -81,7 +81,7 @@ Please use the **Feature Request** issue template. Describe the problem you are 
     ```sh
     git checkout -b feat/my-feature
     ```
-2. Make your changes.
+2. Make your changes, following the conventions in [AGENTS.md](AGENTS.md) - including its JSDoc/TSDoc standard for any new or changed exported symbol.
 3. Add or update tests to cover your changes.
 4. Run the full test suite: `npm test`.
 5. Lint your code: `npm run lint` (or `npm run lint:fix` to auto-fix what it can).
@@ -117,10 +117,10 @@ docs: update README plugin example
 ## Pull Request Process
 
 1. Ensure all tests pass with 100% coverage: `npm test` (required).
-2. Ensure the code passes lint: `npm run lint` (required — CI enforces this).
-3. Ensure code is formatted: `npm run format` (required — CI enforces this).
+2. Ensure the code passes lint: `npm run lint` (required - CI enforces this).
+3. Ensure code is formatted: `npm run format` (required - CI enforces this).
 4. Reference any related issues in the PR description (`Closes #123`).
-5. A maintainer will review your PR. Please be patient — this is a small team.
+5. A maintainer will review your PR. Please be patient - this is a small team.
 6. Address any review feedback by pushing new commits to your branch.
 7. Once approved, a maintainer will merge the PR.
 

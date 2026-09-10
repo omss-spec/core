@@ -22,7 +22,7 @@ export const SRT_REGEX = /\bsrt\b|\.srt(?:$|[/?#])/i
 /**
  * Regex for validating a single catalog entry value.
  *
- * A catalog entry must be either exactly `"*"` (wildcard — provider supports
+ * A catalog entry must be either exactly `"*"` (wildcard - provider supports
  * all IDs in the namespace) or a safe unique string.
  *
  * Mixing `"*"` with other entries in the same catalog array is not allowed

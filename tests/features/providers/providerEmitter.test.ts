@@ -199,7 +199,7 @@ describe('ProviderResultEmitter – emit / debug / info / warn', () => {
         const emitter = createProviderEmitter(hookRegistry)
         emitter.emit('source', {})
 
-        // "source" is a key on the emitter itself — should be blocked
+        // "source" is a key on the emitter itself - should be blocked
         expect(hook).not.toHaveBeenCalled()
     })
 

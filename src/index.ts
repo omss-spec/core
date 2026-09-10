@@ -15,7 +15,7 @@
  * Get started: https://github.com/omss-spec/template
  * More information: https://github.com/omss-spec/core
  *
- *  @packageDocumentation
- *  @author OMSS Foundation <https://github.com/omss-spec> or <206556099+An0n-01@users.noreply.github.com>
+ * @packageDocumentation
+ * @author OMSS Foundation <https://github.com/omss-spec> or <206556099+An0n-01@users.noreply.github.com>
  */
 export * from './public-api.js'

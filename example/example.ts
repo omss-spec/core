@@ -40,7 +40,7 @@ console.log('--- 1. Server ---')
 console.log(`server started for "${server.config.name}"`)
 
 // ---------------------------------------------------------------------------
-// 2. Decorators — attach ad-hoc, readonly properties to the server instance
+// 2. Decorators - attach ad-hoc, readonly properties to the server instance
 // ---------------------------------------------------------------------------
 console.log('\n--- 2. Decorators ---')
 
@@ -50,7 +50,7 @@ console.log('has decorator "startedAt"?', server.hasDecorator('startedAt'))
 console.log('decorator value:', server.getDecorator<string>('startedAt'))
 
 // ---------------------------------------------------------------------------
-// 3. Lifecycle hooks — observe events fired by every feature
+// 3. Lifecycle hooks - observe events fired by every feature
 // ---------------------------------------------------------------------------
 console.log('\n--- 3. Hooks ---')
 
@@ -60,7 +60,7 @@ server.hooks.add('afterProviderRegister', ({ provider }) => console.log(`[hook] 
 server.hooks.add('afterGetSources', ({ omssId, result }) => console.log(`[hook] gathered ${result.sources.length} source(s) for "${omssId}"`))
 
 // ---------------------------------------------------------------------------
-// 4. Plugins — configless and configured
+// 4. Plugins - configless and configured
 // ---------------------------------------------------------------------------
 console.log('\n--- 4. Plugins ---')
 
@@ -76,7 +76,7 @@ const greeterPlugin: OMSSConfiguredPluginType<{ greeting: string }> = async (_in
 await server.plugins.register(greeterPlugin, { greeting: 'Hello from a configured plugin!' })
 
 // A plugin is identified by function reference, so registering the "same"
-// behavior twice needs two distinct functions — this second one demonstrates
+// behavior twice needs two distinct functions - this second one demonstrates
 // that options may also be a factory receiving the server instance.
 const greeterPluginViaFactory: OMSSConfiguredPluginType<{ greeting: string }> = async (_instance, options) => {
     console.log(options.greeting)
@@ -88,7 +88,7 @@ const duplicate = await server.plugins.register(loggerPlugin)
 console.log('duplicate plugin registration:', duplicate.ok ? 'unexpectedly ok' : duplicate.error.message)
 
 // ---------------------------------------------------------------------------
-// 5. Resolvers — convert an OMSS ID into provider-facing metadata
+// 5. Resolvers - convert an OMSS ID into provider-facing metadata
 // ---------------------------------------------------------------------------
 console.log('\n--- 5. Resolvers ---')
 
@@ -109,7 +109,7 @@ const parsed = parseOMSSId('demo:42')
 console.log('parsed OMSS id:', parsed.ok ? parsed.value : parsed.error.message)
 
 // ---------------------------------------------------------------------------
-// 6. Extractors — turn an arbitrary hosting URL into a playable stream
+// 6. Extractors - turn an arbitrary hosting URL into a playable stream
 // ---------------------------------------------------------------------------
 console.log('\n--- 6. Extractors ---')
 
@@ -126,7 +126,7 @@ const foundExtractor = await server.extractors.find('https://demo-host/stream/42
 console.log('found extractor for demo-host?', foundExtractor.ok)
 
 // ---------------------------------------------------------------------------
-// 7. Providers — fetch sources for a resolved media item
+// 7. Providers - fetch sources for a resolved media item
 // ---------------------------------------------------------------------------
 console.log('\n--- 7. Providers ---')
 
@@ -180,7 +180,7 @@ const demoProvider = defineProvider({
 })
 
 // ---------------------------------------------------------------------------
-// 8. Middleware — cross-cutting behavior around registration/gathering
+// 8. Middleware - cross-cutting behavior around registration/gathering
 // ---------------------------------------------------------------------------
 console.log('\n--- 8. Middleware ---')
 
@@ -212,7 +212,7 @@ const demoCatalog = await server.providers.catalogForNamespace('demo')
 console.log('catalog for "demo":', demoCatalog.ok ? demoCatalog.value : demoCatalog.error.message)
 
 // ---------------------------------------------------------------------------
-// 10. Source gathering — the main "give me a playable URL" entrypoint
+// 10. Source gathering - the main "give me a playable URL" entrypoint
 // ---------------------------------------------------------------------------
 console.log('\n--- 10. Source gathering ---')
 
@@ -235,7 +235,7 @@ if (gathered.ok) {
     console.error('failed to gather sources:', gathered.error.message)
 }
 
-// Cancellation via AbortSignal — aborted requests fail fast with a clear error.
+// Cancellation via AbortSignal - aborted requests fail fast with a clear error.
 const controller = new AbortController()
 controller.abort()
 

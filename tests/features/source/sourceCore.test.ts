@@ -169,7 +169,7 @@ describe('SourceCore.getSources', () => {
 
         const res = await core.getSources('tmdb:12345', {}, providerHookService, noopCleaner)
 
-        // provider returned OK({sources: [], ...}) — so hasSuccess=true but 0 sources
+        // provider returned OK({sources: [], ...}) - so hasSuccess=true but 0 sources
         expect(res.ok).toBe(true)
         if (res.ok) expect(res.value.sources).toHaveLength(0)
     })
@@ -335,7 +335,7 @@ describe('SourceCore.getSources', () => {
 
         const res = await core.getSources('tmdb:12345', {}, providerHookService, noopCleaner)
 
-        // provider returned OK({sources: [], ...}) — so hasSuccess=true but 0 sources
+        // provider returned OK({sources: [], ...}) - so hasSuccess=true but 0 sources
         expect(res.ok).toBe(true)
         if (res.ok) expect(res.value.sources).toHaveLength(0)
     })

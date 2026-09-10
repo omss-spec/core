@@ -6,15 +6,18 @@ import { type GatheredSources } from '@/types/source.js'
 import { type Extractor } from '@/types/extractor.js'
 
 /**
- * Hook map for OMSS lifecycle events.
- * Each hook name maps to its own payload signature.
+ * Hook map for OMSS lifecycle events, registered via `server.hooks.add()`.
  *
- * Hooks follow a standardized signature:
- * - `before[action]` hooks receive the payload before the event is triggered
- * - `after[action]` hooks receive the payload after the event is triggered
- * - `[action]failed` hooks receive the payload if the event fails
+ * Each hook name maps to its own payload signature. Hooks follow a
+ * standardized naming triple:
+ * - `before<Action>` - fired before the operation runs.
+ * - `after<Action>` - fired after the operation succeeds.
+ * - `<action>Failed` - fired if the operation fails; payload is the `before` payload plus `error`.
  *
- * @note - There are special hooks with elevated access. See the docs for more info.
+ * @remarks
+ * A few hooks below are marked `@dangerous` - they expose elevated control
+ * over the pipeline they observe (e.g. re-entrant registration) and are not
+ * intended for routine use.
  */
 export type OMSSHooks = {
     /**
@@ -48,16 +51,14 @@ export type OMSSHooks = {
     providerRegisterFailed: (payload: { provider: UnknownProvider; error: OMSSProviderError }) => void | Promise<void>
 
     /**
-     * Called before sources are fetched for an OMSS ID.
-     * Receives the raw ID and the optional provider filter.
+     * Called before sources are fetched for an OMSS ID. Receives the raw ID and the optional provider filter.
      *
-     * @dangerous - This hook is not intended for general use. You can achieve very funny side effects by using it. Use with caution.
+     * @dangerous This hook can be used to observe or short-circuit every source-gathering call. Use with caution.
      */
     beforeGetSources: (payload: { omssId: OMSSId; providerId?: string | undefined }) => void | Promise<void>
 
     /**
-     * Called after sources have been successfully fetched.
-     * Receives the ID, optional provider filter, and the aggregated result.
+     * Called after sources have been successfully fetched. Receives the ID, optional provider filter, and the aggregated result.
      */
     afterGetSources: (payload: { omssId: OMSSId; providerId?: string | undefined; result: GatheredSources }) => void | Promise<void>
 
@@ -69,9 +70,7 @@ export type OMSSHooks = {
     /**
      * Called before an extractor is registered.
      *
-     * @dangerous
-     * Registering another extractor from this hook is not allowed and will
-     * result in an {@link OMSSExtractorError}.
+     * @dangerous Registering another extractor from within this hook is not allowed and results in an {@link OMSSExtractorError}.
      */
     beforeRegisterExtractor: (payload: { extractor: Extractor }) => void | Promise<void>
 
@@ -93,7 +92,8 @@ export type OMSSHooks = {
     /**
      * Called after extractor lookup completes.
      *
-     * If no extractor matched, {@link payload.extractor} will be `undefined`.
+     * @remarks
+     * If no extractor matched, `payload.extractor` is `undefined`.
      */
     afterFindExtractor: (payload: { url: string; extractor: Extractor | undefined }) => void | Promise<void>
 
@@ -107,127 +107,170 @@ export type OMSSHooks = {
  * Base payload shared by every provider hook.
  */
 interface BaseProviderHookPayload {
-    /** The provider instance that emitted the event. */
+    /**
+     * The provider instance that emitted the event.
+     */
     provider: Readonly<UnknownProvider>
     /**
      * The OMSS ID that was being processed.
      */
     id: ParsedOMSSId
     /**
-     * At what time was this event emitted?
+     * The ISO 8601 timestamp at which this event was emitted.
      */
     timestamp: string
 }
 
 /**
- * Fired when `emitter.debug(...)` is called.
+ * Payload fired when `result.debug(...)` is called.
+ *
  * Intended for verbose, development-only diagnostics.
  */
 export type ProviderDebugPayload = BaseProviderHookPayload & {
-    /** Raw arguments forwarded from `debug(...args)`. */
+    /**
+     * Raw arguments forwarded from `debug(...args)`.
+     */
     args: unknown[]
 }
 
 /**
- * Fired when `emitter.info(...)` is called.
+ * Payload fired when `result.info(...)` is called.
+ *
  * General informational messages about provider execution.
  */
 export type ProviderInfoPayload = BaseProviderHookPayload & {
-    /** Raw arguments forwarded from `info(...args)`. */
+    /**
+     * Raw arguments forwarded from `info(...args)`.
+     */
     args: unknown[]
 }
 
 /**
- * Fired when `emitter.warn(...)` is called.
+ * Payload fired when `result.warn(...)` is called.
+ *
  * Non-fatal, degraded-but-recoverable situations.
  */
 export type ProviderWarnPayload = BaseProviderHookPayload & {
-    /** Raw arguments forwarded from `warn(...args)`. */
+    /**
+     * Raw arguments forwarded from `warn(...args)`.
+     */
     args: unknown[]
 }
 
 /**
- * Fired when `emitter.error(...)` is called (non-fatal) OR when
- * `emitter.fatal(...)` is called (fatal — the aggregated error is passed here too).
+ * Payload fired when `result.error(...)` is called (non-fatal), or when
+ * `result.fatal(...)` is called (fatal - the aggregated error is passed here too).
  */
 export type ProviderErrorPayload = BaseProviderHookPayload & {
-    /** The error that was recorded or that terminated the provider. */
+    /**
+     * The error that was recorded, or that terminated the provider.
+     */
     error: OMSSProviderError
 }
 
 /**
- * Fired every time `emitter.source(...)` emits a new source.
+ * Payload fired every time `result.source(...)` emits a new source.
  */
 export type ProviderSourcePayload = BaseProviderHookPayload & {
-    /** The source object that was just emitted. */
+    /**
+     * The source object that was just emitted.
+     */
     source: Source
 }
 
 /**
- * Fired every time `emitter.subtitle(...)` emits a new subtitle track.
+ * Payload fired every time `result.subtitle(...)` emits a new subtitle track.
  */
 export type ProviderSubtitlePayload = BaseProviderHookPayload & {
-    /** The subtitle object that was just emitted. */
+    /**
+     * The subtitle object that was just emitted.
+     */
     subtitle: Subtitle
 }
 
 /**
- * Fired once when `emitter.done()` finalizes the provider's result.
+ * Payload fired once when `result.done()` finalizes the provider's result.
  */
 export type ProviderDonePayload = BaseProviderHookPayload & {
-    /** The fully aggregated result (sources, subtitles, non-fatal errors). */
+    /**
+     * The fully aggregated result (sources, subtitles, and non-fatal errors).
+     */
     result: OMSSProviderResult
 }
 
 /**
- * Fired for provider-defined custom events via `emitter.emit(action, data)`.
+ * Payload fired for provider-defined custom events via `result.emit(action, data)`.
  *
  * @remarks
  * This is an escape hatch for provider-specific diagnostics/telemetry that
  * don't map to any of the fixed lifecycle hooks below (e.g. `"cache.hit"`,
- * `"upstream.retry"`). The `action` string becomes the hook name itself
- * when calling `hookReg.run(action, ...)`, so consumers register listeners
- * for these dynamically via `hookReg.add('cache.hit', handler)`.
+ * `"upstream.retry"`). The `action` string becomes the hook name itself, so
+ * consumers register listeners for these dynamically via
+ * `providerHooks.add('cache.hit', handler)`.
  */
 export type ProviderCustomEventPayload = BaseProviderHookPayload & {
-    /** Arbitrary payload associated with the custom event. */
+    /**
+     * Arbitrary payload associated with the custom event.
+     */
     data: unknown
 }
 
+/**
+ * The fixed set of lifecycle hooks every {@link ProviderResultEmitter} fires.
+ */
 interface FixedProviderHooks {
-    /** See {@link ProviderDebugPayload}. */
+    /**
+     * See {@link ProviderDebugPayload}.
+     */
     debug: (payload: ProviderDebugPayload) => void | Promise<void>
 
-    /** See {@link ProviderInfoPayload}. */
+    /**
+     * See {@link ProviderInfoPayload}.
+     */
     info: (payload: ProviderInfoPayload) => void | Promise<void>
 
-    /** See {@link ProviderWarnPayload}. */
+    /**
+     * See {@link ProviderWarnPayload}.
+     */
     warn: (payload: ProviderWarnPayload) => void | Promise<void>
 
-    /** See {@link ProviderErrorPayload}. Fires on both `error()` and `fatal()`. */
+    /**
+     * See {@link ProviderErrorPayload}. Fires on both `error()` and `fatal()`.
+     */
     error: (payload: ProviderErrorPayload) => void | Promise<void>
 
-    /** See {@link ProviderSourcePayload}. Fires once per `source()` call. */
+    /**
+     * See {@link ProviderSourcePayload}. Fires once per `source()` call.
+     */
     source: (payload: ProviderSourcePayload) => void | Promise<void>
 
-    /** See {@link ProviderSubtitlePayload}. Fires once per `subtitle()` call. */
+    /**
+     * See {@link ProviderSubtitlePayload}. Fires once per `subtitle()` call.
+     */
     subtitle: (payload: ProviderSubtitlePayload) => void | Promise<void>
 
-    /** See {@link ProviderDonePayload}. Fires exactly once, at the end of execution. */
+    /**
+     * See {@link ProviderDonePayload}. Fires exactly once, at the end of execution.
+     */
     done: (payload: ProviderDonePayload) => void | Promise<void>
 }
 
+/**
+ * Arbitrary, provider-defined custom event names - see {@link ProviderCustomEventPayload}.
+ */
 interface ProviderCustomHooks {
     [action: string]: (payload: ProviderCustomEventPayload) => void | Promise<void>
 }
 
 /**
- * All lifecycle hooks fired by a `ProviderResultEmitter` during a single
+ * All lifecycle hooks fired by a {@link ProviderResultEmitter} during a single
  * `getSources()` execution.
  *
+ * @remarks
  * Every union member listed in the index signature corresponds 1:1 to one
- * of the named hooks below, so each named hook's function type is a valid
- * subtype of the index signature — this keeps the interface consistent
- * while still allowing strict payload typing for the well-known events.
+ * of the named hooks in {@link FixedProviderHooks}, so each named hook's
+ * function type is a valid subtype of the index signature - this keeps the
+ * interface consistent while still allowing strict payload typing for the
+ * well-known events.
  */
 export type ProviderHooks = FixedProviderHooks & ProviderCustomHooks

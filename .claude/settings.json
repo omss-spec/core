@@ -19,8 +19,8 @@
             "Read(**/*secret*)",
             "Bash(*.env*)"
         ],
-        "allow": ["Bash(git log*)", "Bash(git status*)"],
-        "ask": ["Bash(git *)"],
+        "allow": ["Bash(git log*)", "Bash(git status*)", "Bash(npm run*)"],
+        "ask": ["Bash(git *)", "Bash(npm*)"],
         "defaultMode": "default"
     }
 }

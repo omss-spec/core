@@ -5,31 +5,32 @@ import { createHookRegistry, type HookRegistry } from '@/features/hooks/HookRegi
  */
 export interface HookService<T> {
     /**
-     * Get all registered hooks immutable. TO ADD HOOKS, USE THE ADD METHOD
-     * @dangerous - Be careful with this. what you are doing might cause side effects.
+     * All registered hooks, keyed by hook name. Read-only - use `add()` to register a hook.
+     *
+     * @dangerous Mutating the returned map's values directly bypasses `add()` and can cause surprising side effects.
      */
     readonly hooks: ReadonlyMap<keyof T, unknown[]>
 
     /**
-     * Register a hook for a lifecycle event.
+     * Registers a hook handler for a lifecycle event.
      *
-     * @typeParam K - The name of the hook to register.
-     * @param name - The hook name (key of THooks).
+     * @typeParam K - The hook name being registered.
+     * @param name - The hook name (a key of `T`).
      * @param cb - The handler function for this hook.
      */
     add<K extends keyof T>(name: K, cb: T[K]): ReturnType<HookRegistry<T>['add']>
 
     /**
-     * Clear all registered hooks.
-     * @dangerous - Be careful with this. Might cause side effects.
+     * Clears all registered hooks.
+     *
+     * @dangerous Removes every hook handler, including ones registered by other plugins.
      */
     reset(): ReturnType<HookRegistry<T>['reset']>
 
     /**
-     * Get the hook registry.
+     * Returns the underlying {@link HookRegistry}.
      *
-     * This is only exposed for internal purposes and should not be accessed in consumer projects.
-     * @dangerous
+     * @dangerous For internal use by other core services only - consumer code should not need to reach past `add`/`reset`/`hooks`.
      * @internal
      */
     __getRegistry(): HookRegistry<T>

@@ -14,20 +14,46 @@ import { createExtractorService, type ExtractorService } from '@/features/extrac
 import { createExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
 
 /**
- * Core server class for OMSS.
+ * The core OMSS server - the framework's public entry point.
+ *
+ * Owns the shared registries/services (hooks, plugins, providers, extractors,
+ * sources) every plugin is wired into, and lets plugins extend the instance
+ * itself via `decorate()`.
+ *
+ * @example
+ * ```ts
+ * const server = new OMSSServer({ name: 'My Media Server' })
+ *
+ * await server.plugins.register(httpPlugin, { port: 3000 })
+ * ```
  */
 export class OMSSServer {
+    /**
+     * Manages OMSS lifecycle hooks. See {@link HookService}.
+     */
     readonly hooks: HookService<OMSSHooks>
+    /**
+     * Manages plugin registration and state. See {@link PluginService}.
+     */
     readonly plugins: PluginService
+    /**
+     * Manages provider registration and catalogs. See {@link ProviderService}.
+     */
     readonly providers: ProviderService
+    /**
+     * Gathers streaming sources for an OMSS ID. See {@link SourceService}.
+     */
     readonly sources: SourceService
+    /**
+     * Manages extractor registration and lookup. See {@link ExtractorService}.
+     */
     readonly extractors: ExtractorService
     readonly #config: OMSSConfig
 
     /**
-     * Creates a new OMSSServer instance.
+     * Creates a new {@link OMSSServer} instance.
      *
-     * @param config - Immutable server configuration
+     * @param config - The immutable server configuration.
      */
     constructor(config: OMSSConfig) {
         this.#config = config
@@ -45,19 +71,26 @@ export class OMSSServer {
     }
 
     /**
-     * Get the OMSS Config from the constructor
-     * @returns the initialised OMSS Config
+     * The server configuration passed to the constructor.
+     *
+     * @returns The immutable server configuration.
      */
     get config(): Readonly<OMSSConfig> {
         return this.#config
     }
 
     /**
-     * Decorate the OMSSServer instance with a new property.
-     * @param name - The name of the property to be decorated.
-     * @param value - The value to be assigned to the property.
-     * @param deps - An array of dependency names.
-     * @returns The name of the decorated property in the {@link Result} object.
+     * Decorates the server instance with a new, readonly property.
+     *
+     * @remarks
+     * This is how plugins extend the server with their own public API
+     * surface (e.g. an HTTP plugin decorating `server.http`).
+     *
+     * @typeParam T - The type of the value being decorated.
+     * @param name - The name of the property to decorate.
+     * @param value - The value to assign to the property.
+     * @param deps - Names of other decorators this one depends on. Registration fails if any is missing.
+     * @returns The decorated property's name, or an error if `name` already exists or a dependency is missing.
      */
     decorate<T>(name: string, value: T, deps: string[] = []): Result<string, OMSSServerError> {
         if (Object.hasOwn(this, name)) {
@@ -88,18 +121,21 @@ export class OMSSServer {
     }
 
     /**
-     * Check if a decorator with the given name exists.
+     * Checks whether a decorator with the given name exists.
+     *
      * @param name - The name of the decorator to check.
-     * @returns True if the decorator exists, false otherwise.
+     * @returns `true` if the decorator exists, `false` otherwise.
      */
     hasDecorator(name: string): boolean {
         return Object.hasOwn(this, name)
     }
 
     /**
-     * Get a decorated property by its name.
+     * Gets a decorated property by its name.
+     *
+     * @typeParam T - The expected type of the decorated value.
      * @param name - The name of the property to retrieve.
-     * @returns The decorated property value in the {@link Result} object.
+     * @returns The decorated value, or an error if no decorator with that name exists.
      */
     getDecorator<T>(name: string): Result<T, OMSSServerError> {
         if (!Object.hasOwn(this, name)) {

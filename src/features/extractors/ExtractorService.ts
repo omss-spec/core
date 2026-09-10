@@ -16,17 +16,18 @@ export interface ExtractorService {
     readonly extractors: ReadonlyArray<Extractor>
 
     /**
-     * Find an extractor capable of handling the given URL.
+     * Finds an extractor capable of handling the given URL.
      *
-     * @param url - URL to search for.
-     * @returns The first matching {@link Extractor} or an {@link OMSSExtractorError}.
+     * @param url - The URL to search for.
+     * @returns The first matching {@link Extractor}, or an {@link OMSSExtractorError} if none match.
      */
     find(url: string): Promise<Result<Extractor, OMSSExtractorError>>
 
     /**
-     * Register an extractor.
+     * Registers an extractor.
      *
-     * @param extractor - Extractor to register.
+     * @param extractor - The extractor to register.
+     * @returns `OK` if registration succeeded, or an error if it failed.
      */
     register(extractor: Extractor): Promise<Result<void, OMSSExtractorError>>
 

@@ -5,14 +5,16 @@
  */
 export interface HookRegistry<T> {
     /**
-     * Get all registered hooks immutable.
-     * @dangerous - Be careful with this. what you are doing might cause side effects.
+     * All registered hooks, keyed by hook name. Read-only - use `add()` to register a hook.
+     *
+     * @dangerous Mutating the returned map's values directly bypasses `add()` and can cause surprising side effects.
      */
     readonly hooks: ReadonlyMap<keyof T, unknown[]>
 
     /**
-     * Clear all registered hooks.
-     * @dangerous - Be careful with this. Might cause side effects.
+     * Clears all registered hooks.
+     *
+     * @dangerous Removes every hook handler, including ones registered by other plugins.
      */
     reset(): void
 

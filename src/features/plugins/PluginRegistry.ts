@@ -11,12 +11,29 @@ import { ERR, OK } from '@/utils/utils.js'
  * Plugins are executed when added.
  */
 export interface PluginRegistry {
+    /**
+     * Executes a configless plugin.
+     *
+     * @param plugin - The plugin function to register.
+     * @returns The registered state, or an error if registration failed.
+     */
     add(plugin: OMSSPluginType): Promise<Result<PluginState.Registered, OMSSPluginError>>
 
+    /**
+     * Executes a plugin with its configuration.
+     *
+     * @typeParam T - The plugin's configuration type.
+     * @param plugin - The plugin function to register.
+     * @param options - The plugin's configuration, or a factory that resolves it.
+     * @returns The registered state, or an error if registration failed.
+     */
     add<T>(plugin: OMSSConfiguredPluginType<T>, options: OMSSPluginOptions<T>): Promise<Result<PluginState.Registered, OMSSPluginError>>
 
     /**
-     * Get the current plugin state.
+     * Gets the current state of a plugin.
+     *
+     * @param plugin - The plugin to look up.
+     * @returns The plugin's current {@link PluginState}, or `PluginState.Unavailable` if it was never registered.
      */
     getState<T>(plugin: UnknownPluginType | OMSSPluginType | OMSSConfiguredPluginType<T>): PluginState
 }
@@ -42,6 +59,7 @@ export function createPluginRegistry(server: OMSSServer): PluginRegistry {
      *
      * @param plugin - The plugin function to register.
      * @param options - Plugin options or a factory function that resolves options.
+     * @returns The registered state, or an error if registration failed.
      */
     async function add(plugin: UnknownPluginType, options?: unknown): Promise<Result<PluginState.Registered, OMSSPluginError>> {
         // Check whether this plugin is already known

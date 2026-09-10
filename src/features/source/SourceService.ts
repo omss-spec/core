@@ -26,13 +26,14 @@ export interface SourceService {
     cleaningFunction: CleaningFunction
 
     /**
-     * Register middleware for a SourceService method.
+     * Registers middleware for a SourceService method.
      *
      * Middleware can be used for cross-cutting concerns such as caching,
      * logging, tracing, or metrics.
      *
-     * @param method - Middleware-enabled method name.
-     * @param handler - Middleware handler.
+     * @typeParam TMethod - The middleware-enabled operation to add a handler for.
+     * @param method - The operation name (`"getSources"` or `"afterGetSources"`).
+     * @param handler - The middleware handler.
      */
     use<TMethod extends keyof SourceServiceOperations>(method: TMethod, handler: SourceServiceMiddleware<TMethod>): void
 

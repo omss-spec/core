@@ -250,7 +250,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
 
         /**
          * Records a NON-fatal error. The provider continues executing after
-         * calling this — use `fatal()` instead if the provider cannot continue.
+         * calling this - use `fatal()` instead if the provider cannot continue.
          *
          * The error is accumulated and returned to the requestor as part of
          * the `diagnostics`/`errors` field once `done()` is called, allowing

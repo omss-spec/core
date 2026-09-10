@@ -13,13 +13,24 @@ import { createMiddlewareRunner } from '@/utils/MiddlewareRunner.js'
 export interface ProviderService {
     /**
      * Adds middleware to the `register` pipeline.
-     * Middlewares run in insertion order, after hooks and before the
-     * actual registry `add()` call.
+     *
+     * Middleware runs in insertion order, after hooks and before the actual registry `add()` call.
+     *
+     * @typeParam TMethod - The middleware-enabled operation to add a handler for.
+     * @param method - The operation name - currently only `"register"`.
+     * @param handler - The middleware handler.
+     * @returns This {@link ProviderService}, for chaining further `use()` calls.
      */
     use<TMethod extends keyof ProviderServiceOperations>(method: TMethod, handler: ProviderServiceMiddleware<TMethod>): ProviderService
 
     /**
      * Registers a provider into the system.
+     *
+     * Runs the `beforeProviderRegister` → middleware → registry `add()` →
+     * `afterProviderRegister`/`providerRegisterFailed` pipeline.
+     *
+     * @param provider - The provider to register.
+     * @returns The registered provider, or an error if registration failed.
      */
     register(provider: UnknownProvider): Promise<Result<UnknownProvider, OMSSProviderError>>
 
@@ -59,7 +70,7 @@ export interface ProviderService {
      *          signals wildcard support, or `undefined` if no catalog data exists.
      *
      * @remarks
-     * Re-invokes `catalog()` on every matching provider on each call — see
+     * Re-invokes `catalog()` on every matching provider on each call - see
      * {@link ProviderService.catalog} for caching implications.
      */
     catalogForNamespace(namespace: string): Promise<Result<string[], OMSSProviderError>>

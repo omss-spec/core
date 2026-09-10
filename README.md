@@ -32,7 +32,7 @@
 
 **OMSS Core** is the official TypeScript runtime and plugin orchestrator for building [OMSS-compliant](https://github.com/omss-spec/omss-spec) media streaming services.
 
-The core is intentionally minimal. Its sole responsibility is to manage the OMSS lifecycle, load plugins, and expose shared states between them. All additional functionality — HTTP transport, caching, resolvers, auth — is added via **OMSS Plugins**.
+The core is intentionally minimal. Its sole responsibility is to manage the OMSS lifecycle, load plugins, and expose shared states between them. All additional functionality - HTTP transport, caching, resolvers, auth - is added via **OMSS Plugins**.
 
 > [!NOTE]
 > The project is in beta. The API shown here is preliminary.
@@ -41,6 +41,7 @@ The core is intentionally minimal. Its sole responsibility is to manage the OMSS
 
 - [Install](#install)
 - [Quick Start](#quick-start)
+- [Writing Providers & Resolvers](#writing-providers--resolvers)
 - [Features](#features)
 - [Documentation](#documentation-_coming-soon_)
 - [Ecosystem](#ecosystem)
@@ -84,6 +85,51 @@ await server.plugins.register(httpPlugin, {
 ```
 
 Do you want to know more? Check out the [documentation](https://omss.mintlify.site) for a more in-depth guide.
+
+## Writing Providers & Resolvers
+
+**Resolvers** convert an OMSS ID into the metadata a provider needs; **providers** use that metadata to fetch streaming sources. Both are plain objects - build them with `defineResolver()`/`defineProvider()` for full type inference:
+
+```ts
+import { defineResolver, defineProvider, OK } from '@omss/core'
+
+const tmdbResolver = defineResolver({
+    namespace: 'tmdb',
+    name: 'TMDB Resolver',
+    converter: new Map(),
+    async resolve(id) {
+        return OK({ title: `Movie #${id.values[0]}` })
+    },
+})
+
+const myProvider = defineProvider({
+    id: 'my-provider',
+    name: 'My Provider',
+    enabled: true,
+    supportsId: (id) => id.namespace === 'tmdb',
+    resolver: tmdbResolver,
+    async getSources(request, result) {
+        result.source({
+            url: 'https://cdn.example.com/stream.m3u8',
+            header: {},
+            streamable: true,
+            type: 'hls',
+            quality: 'FHD',
+            languages: ['English'],
+        })
+        return result.done()
+    },
+})
+
+await server.providers.register(myProvider)
+
+const result = await server.sources.getSources('tmdb:155')
+if (result.ok) {
+    console.log(result.value.sources)
+}
+```
+
+See [example/example.ts](example/example.ts) for a full tour of every feature - hooks, plugins, resolvers, providers, extractors, middleware, and source gathering.
 
 ## Features
 
@@ -135,22 +181,22 @@ Resolvers are used to resolve OMSS IDs to media metadata.
 
 ## ID Convention
 
-IDs follow the format `<namespace>:<value_1>:<value_2>:...:<value_n>`. Values can contain any character — use URL encoding if your value includes `:` or whitespaces. Values are URL-decoded during parsing.
+IDs follow the format `<namespace>:<value_1>:<value_2>:...:<value_n>`. Values can contain any character - use URL encoding if your value includes `:` or whitespaces. Values are URL-decoded during parsing.
 
 However, the following namespaces are reserved for the OMSS specification and must follow the rules below. More namespaces may be added in the future:
 
 **TMDB:**
 
-- Movie: `tmdb:<movie_id>` — e.g., `tmdb:155`
-- TV Episode: `tmdb:<show_id>:<season>:<episode>` — e.g., `tmdb:1396:3:7`
+- Movie: `tmdb:<movie_id>` - e.g., `tmdb:155`
+- TV Episode: `tmdb:<show_id>:<season>:<episode>` - e.g., `tmdb:1396:3:7`
 
 > [!NOTE]
 > All values must be natural numbers (≥ 1), except `season_number` which may be `0` (specials).
 
-**IMDb** (Movies and TV Episodes only — not series):
+**IMDb** (Movies and TV Episodes only - not series):
 
-- Movie: `imdb:tt<digits>` — e.g., `imdb:tt0468569`
-- TV Episode: `imdb:tt<digits>` — e.g., `imdb:tt1480055`
+- Movie: `imdb:tt<digits>` - e.g., `imdb:tt0468569`
+- TV Episode: `imdb:tt<digits>` - e.g., `imdb:tt1480055`
 
 > [!NOTE]
 > Valid IMDb IDs consist of the prefix `tt` followed by exactly seven digits.
@@ -159,7 +205,7 @@ A full list of supported namespaces and their values can be found in the [OMSS S
 
 ## Contributing
 
-Whether reporting bugs, discussing improvements, or writing code — contributions are welcome. Please read the [CONTRIBUTING](./CONTRIBUTING.md) guidelines before opening a pull request.
+Whether reporting bugs, discussing improvements, or writing code - contributions are welcome. Please read the [CONTRIBUTING](./CONTRIBUTING.md) guidelines before opening a pull request.
 
 ## Support
 

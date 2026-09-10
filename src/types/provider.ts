@@ -6,51 +6,72 @@ import { type MiddlewareHandler } from '@/types/middleware.js'
 import { type ExtractorService } from '@/features/extractors/ExtractorService.js'
 
 /**
- * Core provider interface.
+ * Fetches streaming sources for media resolved by a bound resolver.
  *
- * @typeParam P - The resolver class this provider is bound to.
- *               The return type of P['resolve'] determines the `meta`
- *               parameter shape of getSources().
+ * Typically implemented via `defineProvider()` rather than this interface directly.
+ *
+ * @typeParam P - The resolver this provider is bound to. The return type of
+ * `P['resolve']` determines the `meta` parameter shape of `getSources()`.
  */
 export interface OMSSProvider<P extends OMSSResolver<unknown>> {
-    /** Provider ID. Must be unique. */
+    /**
+     * The provider ID. Must be unique.
+     */
     readonly id: string
 
-    /** Friendly name of the provider. */
+    /**
+     * A human-readable provider name.
+     */
     readonly name: string
 
-    /** Whether the provider will be used. */
+    /**
+     * Whether the provider is used during source gathering.
+     */
     readonly enabled: boolean
 
     /**
-     * Catalog of media this provider supports. It does not have to exist. If it does, it should be a list of media IDs.
-     * This does not get queried for source resolving, but more metadata about the provider.
+     * The catalog of media IDs this provider supports, if any.
+     *
+     * @remarks
+     * This is metadata about the provider, not something queried during
+     * source resolving. A single `"*"` entry means the provider supports
+     * every ID in its resolver's namespace.
      */
     readonly catalog?: () => Promise<NonEmptyArray<string>> | NonEmptyArray<string>
 
     /**
-     * Provide a method that checks whether this provider supports a certain ID.
-     * @param id - Parsed OMSS ID
+     * Checks whether this provider supports a given ID.
+     *
+     * @param id - The parsed OMSS ID to check.
      */
     readonly supportsId: (id: ParsedOMSSId) => boolean | Promise<boolean>
 
-    /** Resolver that this provider is bound to. */
+    /**
+     * The resolver this provider is bound to.
+     */
     readonly resolver: P
 
     /**
-     * Fetch sources for a certain request.
-     * The shape of `request.meta` is derived from the resolver's resolve() return type.
+     * Fetches sources for a resolved media item.
+     *
+     * @param request - The resolved metadata and per-request utilities. The shape of `request.meta` is derived from the resolver's `resolve()` return type.
+     * @param result - The result emitter used to report sources, subtitles, diagnostics, and completion.
+     * @returns The aggregated result, as produced by `result.done()` or `result.fatal()`.
      */
     getSources(request: ProviderSourcesMeta<ResolverMetadata<P>>, result: ProviderResultEmitter): Promise<ProviderResult>
 }
 
 /**
- * Extract the metadata type from a resolver's resolve method.
+ * Extracts the metadata type produced by a resolver's `resolve()` method.
+ *
+ * @typeParam R - The resolver to extract the metadata type from.
  */
 export type ResolverMetadata<R extends OMSSResolver<unknown>> = Extract<Awaited<ReturnType<R['resolve']>>, { ok: true }> extends { value: infer T } ? T : never
 
 /**
- * The object passed to providers when they are executed.
+ * The object passed as the first argument to `provider.getSources()`.
+ *
+ * @typeParam T - The metadata type returned by the provider's bound resolver.
  */
 export type ProviderSourcesMeta<T> = {
     utils: {
@@ -59,294 +80,332 @@ export type ProviderSourcesMeta<T> = {
          */
         omssId: ParsedOMSSId
         /**
-         * The abort controller signal for the current request. Providers can check this to abort the request early (recommended for long running requests).
+         * The abort signal for the current request. Providers should check this and stop early for long-running requests.
          */
         abortSignal: AbortSignal
         /**
-         * A function to find an extractor by whatever the extractor service is configured to use.
-         * @param args - Arguments to pass to the extractor service's find() method.'
+         * Finds a registered {@link Extractor} for a URL, via {@link ExtractorService.find}.
+         *
+         * @param args - Arguments forwarded to `ExtractorService.find()`.
          */
         findExtractor: (...args: Parameters<ExtractorService['find']>) => ReturnType<ExtractorService['find']>
     }
-    /** Metadata returned by the resolver */
+    /**
+     * The metadata returned by the provider's bound resolver.
+     */
     meta: T
 }
 
 /**
- * Provider with an unknown resolver. Utils for other services and registries
+ * A provider bound to an unknown resolver. Used internally by services and
+ * registries that don't need the exact resolver metadata type.
  */
 export type UnknownProvider = OMSSProvider<OMSSResolver<unknown>>
 
 /**
- * The result of a provider getSources call.
+ * The result of a `provider.getSources()` call.
  */
 export type ProviderResult = Result<OMSSProviderResult, OMSSProviderError>
 
 /**
- * The result of a provider getSources call if successful.
+ * The result of a `provider.getSources()` call, once successful.
  */
 export interface OMSSProviderResult {
     /**
-     * Array of sources.
+     * All sources gathered by this provider.
      */
     sources: Source[]
     /**
-     * Array of subtitle tracks.
+     * All subtitle tracks gathered by this provider.
      */
     subtitles: Subtitle[]
     /**
-     * Array of errors.
+     * Non-fatal errors gathered by this provider, alongside any successful sources.
      */
     errors: OMSSProviderError[]
 }
 
 /**
- * The result object passed to the provider's getSources() method.
+ * The result object passed as the second argument to `provider.getSources()`.
+ *
+ * Created fresh per call via `createProviderResultEmitter()` - see that
+ * function for the lifetime/scoping guarantees it provides.
  */
 export type ProviderResultEmitter = {
     /**
-     * Utilities to make your life easier
+     * Parsing helpers for building well-formed source/subtitle metadata.
      */
     utils: {
         /**
-         * Utilities for parsing metadata of sources
+         * Parsing helpers for source metadata.
          */
         source: {
             /**
-             * Parse a string into a possible source type.
-             * @param possibleType - The string to parse
+             * Parses a string into a source type.
+             *
+             * @param possibleType - The string to parse (a keyword or file extension).
+             * @returns The best-matching {@link SourceTypes} value, defaulting to `"hls"` if nothing matches.
              */
             parseType(possibleType: string): SourceTypes
             /**
-             * Parse a string into a possible source quality.
-             * @param possibleQuality - The string to parse
+             * Parses a string into a source quality.
+             *
+             * @param possibleQuality - The string to parse (a label, resolution, or bitrate).
+             * @returns The best-matching {@link SourceQuality} value, defaulting to `"Auto"` if nothing matches.
              */
             parseQuality(possibleQuality: string): SourceQuality
         }
         /**
-         * Utilities for parsing metadata of subtitles
+         * Parsing helpers for subtitle metadata.
          */
         subtitle: {
             /**
-             * Parse a string into a possible subtitle format.
-             * @param possibleFormat - The string to parse
+             * Parses a string into a subtitle format.
+             *
+             * @param possibleFormat - The string to parse (a keyword or file extension).
+             * @returns The best-matching {@link SubtitleFormat} value, defaulting to `"vtt"` if nothing matches.
              */
             parseFormat(possibleFormat: string): SubtitleFormat
         }
     }
     /**
-     * Method for custom logging
-     * @param action - The action to log
-     * @param data - The data to log
+     * Emits a custom, provider-defined action/event.
+     *
+     * @param action - A custom event name (e.g. `"cache.hit"`). Must not contain whitespace or collide with one of this emitter's own method names.
+     * @param data - Arbitrary payload associated with the event.
      */
     emit(action: string, data: unknown): void
     /**
-     * Method for debug logging
-     * @param args - Arguments to log
+     * Logs verbose debug information. Intended for development/troubleshooting only.
+     *
+     * @param args - Values to log, forwarded as-is (same semantics as `console.debug`).
      */
     debug(...args: unknown[]): void
     /**
-     * Method for information logging
-     * @param args - Arguments to log
+     * Logs a general informational message about provider execution (e.g. "Fetched media", "Cache miss, fetching from upstream").
+     *
+     * @param args - Values to log.
      */
     info(...args: unknown[]): void
     /**
-     * Method for warning logging
-     * @param args - Arguments to log
+     * Logs a non-fatal warning. Use for degraded-but-recoverable situations (e.g. "missing quality metadata, defaulting to Auto").
+     *
+     * @param args - Values to log.
      */
     warn(...args: unknown[]): void
     /**
-     * Method for error logging. Not fatal.
-     * @param error - The error to log. This will be returned to the requestor
+     * Records a non-fatal error and continues provider execution.
+     *
+     * @remarks
+     * Use `fatal()` instead if the provider cannot continue. The error is
+     * accumulated and returned alongside any successful sources once
+     * `done()` is called, allowing partial success (e.g. "server 2 of 3 failed").
+     *
+     * @param error - The error to record. Surfaced to the caller of `getSources()`.
      */
     error(error: OMSSProviderError): void
 
     /**
-     * Method to emit a source.
-     * @param source - The source to emit
+     * Emits a single resolved source.
+     *
+     * @param source - The source to emit.
      */
     source(source: Omit<Source, 'provider'>): void
     /**
-     * Method to emit a subtitle.
-     * @param subtitle - The subtitle to emit
+     * Emits a single subtitle track.
+     *
+     * @param subtitle - The subtitle to emit.
      */
     subtitle(subtitle: Omit<Subtitle, 'provider'>): void
 
     /**
-     * Method to emit a fatal error. This will stop the provider from executing.
-     * @param error - The error to emit
+     * Immediately aborts provider execution with a fatal error.
+     *
+     * @param error - The fatal error describing why the provider could not proceed.
+     * @returns An `ERR` result wrapping the given error (plus any previously accumulated non-fatal errors).
      * @example
-     * ```typescript
-     * return result.fatal(new OMSSProviderError("Error Message", {cause: optionalObject}))
+     * ```ts
+     * return result.fatal(new OMSSProviderError('upstream unreachable', { cause: err }))
      * ```
      */
     fatal(error: OMSSProviderError): Result<never, OMSSProviderError>
     /**
-     * Signal that the provider has finished processing.
-     * @important Return the return value of this method.
+     * Signals that the provider has finished emitting sources/subtitles and finalizes the result.
+     *
+     * @remarks
+     * The return value must be returned from `getSources()` - this is what
+     * turns everything emitted so far into the final {@link ProviderResult}.
+     *
+     * @returns An `OK` result containing all accumulated sources, subtitles, and non-fatal errors for this execution.
      * @example
-     * ```typescript
+     * ```ts
      * return result.done()
      * ```
      */
     done(): ProviderResult
 }
 
+/**
+ * Fields shared by every {@link Source} variant.
+ */
 export interface BaseSource {
     /**
-     * A string representing the original URL to the streaming source from the provider, which may require CORS handling or custom headers (provided in the headers field).
+     * The original streaming source URL from the provider. May require CORS handling or custom headers (see `header`).
      */
     url: string
     /**
-     * Key-value pairs of HTTP (and non-standard HTTP) headers that should be included when accessing the source URL.
+     * HTTP (and non-standard HTTP) headers required when accessing `url`.
      */
     header: Record<string, string>
     /**
-     * Indicates if the source is streamable (true) or a direct download link (false). If false, clients must treat the URL as a download link rather than a streaming source. Download links CANNOT be used as streaming sources.
+     * Whether the source is streamable (`true`) or a direct download link (`false`).
+     *
+     * @remarks
+     * If `false`, clients must treat the URL as a download link rather than
+     * a streaming source - download links cannot be used as streaming sources.
      * @see [MDN Range Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Range#:~:text=A%20server%20that%20doesn%27t%20support%20range%20requests%20may%20ignore%20the%20Range%20header%20and%20return%20the%20whole%20resource%20with%20a%20200%20status%20code.)
      */
     streamable: boolean
     /**
-     * Source type, one of:
-     * hls — HTTP Live Streaming (M3U8).
-     * mp4 — MP4 file.
-     * mkv — MKV file.
-     * dash — MPEG-DASH (.mpd files).
+     * The source type - see {@link SourceTypes}.
      */
     type: SourceTypes
     /**
-     * Video quality. One of 8K, 4K, QHD, FHD, HD, SD, or Auto: Quality should be inferred from the best available metadata, prioritizing resolution, then bitrate, filename, or manifest information. If the quality cannot be determined, use Auto.
+     * The video quality - see {@link SourceQuality}.
      *
-     * The ranges are like following:
-     * 4320p+ → 8K
-     * 2160p–4319p → 4K
-     * 1440p–2159p → QHD
-     * 1080p–1439p → FHD
-     * 720p–1079p → HD
-     * Below 720p → SD
-     * Unknown → Auto
+     * @remarks
+     * Should be inferred from the best available metadata, prioritizing
+     * resolution, then bitrate, filename, or manifest information. Use
+     * `"Auto"` if quality cannot be determined. Resolution ranges:
+     * 4320p+ → 8K, 2160p–4319p → 4K, 1440p–2159p → QHD, 1080p–1439p → FHD,
+     * 720p–1079p → HD, below 720p → SD.
      */
     quality: SourceQuality
     /**
-     * Information on the provider that provided this source.
+     * The provider that produced this source.
      */
     provider: { id: string; name: string }
 }
 
 /**
- * A source that has at least one known language baked into the stream itself
+ * A source with at least one known language baked into the stream itself
  * (e.g. audio muxed into the HLS/DASH manifest or MP4/MKV file).
  */
 interface SourceWithLanguages extends BaseSource {
     /**
-     * Human-readable language name(s). default/unknown --> Original
-     * This should be provided to the best of the provider's ability.
-     * You should only list languages that are actually available in this specific source. If the source only contains video (no audio), keep this array empty and add the audiotracks via result.audioTrack().
+     * Human-readable language name(s) actually available in this specific source. Use `"Original"` if the language is unknown/default.
+     *
+     * @remarks
+     * If the source contains no muxed-in audio (video-only), keep this
+     * array empty and provide `audioTracks` instead.
      */
     languages: NonEmptyArray<string>
     audioTracks?: never
 }
 
 /**
- * A source with no muxed-in audio at all (e.g. video-only stream).
- * MUST provide at least one separate AudioTrack instead.
+ * A source with no muxed-in audio at all (e.g. a video-only stream). Must
+ * provide at least one separate {@link AudioTrack} instead.
  */
 interface SourceWithAudioTracks extends BaseSource {
     languages?: never
     /**
-     * Array of audio tracks.
+     * The separate audio tracks available for this source.
      */
     audioTracks: NonEmptyArray<AudioTrack>
 }
 
 /**
- * A source object.
- * A source MUST declare at least one language (muxed-in) OR at least one
- * separate audioTrack. Both may be present; at least one is required.
- * @see https://github.com/omss-spec/omss-spec/blob/main/spec/v1.1/omss-v1.1.md#62-source-object
+ * A streaming source. Must declare at least one muxed-in language OR at
+ * least one separate audio track (both may be present).
+ *
+ * @see [OMSS spec §6.2 Source Object](https://github.com/omss-spec/omss-spec/blob/main/spec/v1.1/omss-v1.1.md#62-source-object)
  */
 export type Source = SourceWithLanguages | SourceWithAudioTracks
 
 /**
- * Valid Source Types
+ * Valid source container/stream types.
  */
 export type SourceTypes = 'hls' | 'mp4' | 'dash' | 'mkv'
 
 /**
- * Video quality
+ * Video quality tiers, from lowest to highest resolution.
  */
 export type SourceQuality = '8K' | '4K' | 'QHD' | 'FHD' | 'HD' | 'SD' | 'Auto'
 
 /**
- * A subtitle object.
- * @see https://github.com/omss-spec/omss-spec/blob/main/spec/v1.1/omss-v1.1.md#63-subtitle-object
+ * A subtitle track.
+ *
+ * @see [OMSS spec §6.3 Subtitle Object](https://github.com/omss-spec/omss-spec/blob/main/spec/v1.1/omss-v1.1.md#63-subtitle-object)
  */
 export interface Subtitle {
     /**
-     * A string representing the original URL to the subtitle from the provider, which may require CORS handling or custom headers (provided in the headers field).
+     * The original subtitle URL from the provider. May require CORS handling or custom headers (see `header`).
      */
     url: string
     /**
-     * Key-value pairs of HTTP (and non-standard HTTP) headers that should be included when accessing the subtitle URL.
+     * HTTP (and non-standard HTTP) headers required when accessing `url`.
      */
     header: Record<string, string>
     /**
-     * Human-readable language name for the subtitle track. default/unknown --> Unknown
+     * Human-readable language name for the subtitle track. Use `"Unknown"` if not known.
      */
     label: string
     /**
-     * Subtitle format, one of:
-     *
-     * vtt — WebVTT.
-     * srt — SubRip.
+     * The subtitle format - see {@link SubtitleFormat}.
      */
     format: SubtitleFormat
     /**
-     * Information on the provider that provided this subtitle track.
+     * The provider that produced this subtitle track.
      */
     provider: { id: string; name: string }
 }
 
 /**
- * Valid Subtitle Formats
+ * Valid subtitle formats.
  */
 export type SubtitleFormat = 'vtt' | 'srt'
 
 /**
- * An audio track object.
- * @see https://github.com/omss-spec/omss-spec/blob/main/spec/v1.1/omss-v1.1.md#62-source-object:~:text=Unknown%20%E2%86%92%20Auto-,audioTracks,-(array%20of%20strings
- * @see https://github.com/omss-spec/omss-spec/issues/8
+ * A separate audio track, used when a source has no muxed-in audio.
+ *
+ * @see [OMSS spec §6.2 Source Object](https://github.com/omss-spec/omss-spec/blob/main/spec/v1.1/omss-v1.1.md#62-source-object:~:text=Unknown%20%E2%86%92%20Auto-,audioTracks,-(array%20of%20strings)
+ * @see [omss-spec#8](https://github.com/omss-spec/omss-spec/issues/8)
  */
 export interface AudioTrack {
     /**
-     * A string representing the original URL to the audiotrack from the provider, which may require CORS handling or custom headers (provided in the headers field).
+     * The original audio track URL from the provider. May require CORS handling or custom headers (see `header`).
      */
     url: string
     /**
-     * Key-value pairs of HTTP (and non-standard HTTP) headers that should be included when accessing the audiotrack URL.
+     * HTTP (and non-standard HTTP) headers required when accessing `url`.
      */
     header: Record<string, string>
     /**
-     * Human-readable language name for the audiotrack. default/unknown --> Unknown
+     * Human-readable language name for the audio track. Use `"Unknown"` if not known.
      */
     label: string
 }
 
 /**
- * Helper types for the structure that should be passed into the emitter.
+ * The source shape accepted by `result.source()` - a {@link Source} without the `provider` field, which the emitter fills in automatically.
  */
 export type EmittedSource = Omit<SourceWithLanguages, 'provider'> | Omit<SourceWithAudioTracks, 'provider'>
+
+/**
+ * The subtitle shape accepted by `result.subtitle()` - a {@link Subtitle} without the `provider` field, which the emitter fills in automatically.
+ */
 export type EmittedSubtitle = Omit<Subtitle, 'provider'>
 
 /**
- * Methods that can be called on the ProviderService middleware.
+ * Operations supported by {@link ProviderService}'s middleware runner, with their context and result types.
  */
 export type ProviderServiceOperations = {
     /**
      * The provider registration pipeline.
      *
      * Middleware runs after `beforeProviderRegister` and before
-     * ProviderRegistry.add(). Context carries the provider being registered.
+     * `ProviderRegistry.add()`. Context carries the provider being registered.
      */
     register: {
         context: { provider: UnknownProvider }
@@ -354,4 +413,7 @@ export type ProviderServiceOperations = {
     }
 }
 
+/**
+ * Middleware function for a {@link ProviderService} operation.
+ */
 export type ProviderServiceMiddleware<TMethod extends keyof ProviderServiceOperations> = MiddlewareHandler<ProviderServiceOperations, TMethod>

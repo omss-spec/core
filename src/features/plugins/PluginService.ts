@@ -10,22 +10,28 @@ import type { OMSSHooks } from '@/types/hooks.js'
  */
 export interface PluginService {
     /**
-     * Register an OMSS plugin with no config into the system.
-     * @param plugin - Plugin function
+     * Registers a configless OMSS plugin.
+     *
+     * @param plugin - The plugin function to register.
+     * @returns The registered state, or an error if registration failed.
      */
     register(plugin: OMSSPluginType): ReturnType<PluginRegistry['add']>
 
     /**
-     * Register an OMSS plugin with a config into the system.
-     * @param plugin - Plugin function
-     * @param options - Plugin configuration
+     * Registers an OMSS plugin with configuration.
+     *
+     * @typeParam T - The plugin's configuration type.
+     * @param plugin - The plugin function to register.
+     * @param options - The plugin's configuration, or a factory that resolves it.
+     * @returns The registered state, or an error if registration failed.
      */
     register<T>(plugin: OMSSConfiguredPluginType<T>, options: OMSSPluginOptions<T>): ReturnType<PluginRegistry['add']>
 
     /**
-     * Get the current State of a plugin
-     * @param plugin - the plugin to get the state from
-     * @returns - a value of the PluginState enum
+     * Gets the current state of a plugin.
+     *
+     * @param plugin - The plugin to look up.
+     * @returns The plugin's current {@link PluginState}.
      */
     getPluginState(plugin: UnknownPluginType): ReturnType<PluginRegistry['getState']>
 }
@@ -41,7 +47,9 @@ export function createPluginService(pluginRegistry: PluginRegistry, hookRegistry
 
     return {
         /**
-         * Registers an OMSS plugin that can take a config into the system, but does not need to.
+         * Registers an OMSS plugin, with or without configuration.
+         *
+         * Runs the `beforePluginRegister` → registry `add()` → `afterPluginRegister`/`pluginRegisterFailed` hook pipeline.
          */
         async register(plugin: UnknownPluginType, options?: unknown): ReturnType<PluginRegistry['add']> {
             if (insideBeforePluginRegister) {
