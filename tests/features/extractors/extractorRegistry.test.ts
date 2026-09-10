@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { ExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
+import { createExtractorRegistry, type ExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
 import { createExtractor } from '../../utils.js'
 
 describe('ExtractorRegistry', () => {
     let registry: ExtractorRegistry
 
     beforeEach(() => {
-        registry = new ExtractorRegistry()
+        registry = createExtractorRegistry()
     })
 
     it('starts empty', () => {

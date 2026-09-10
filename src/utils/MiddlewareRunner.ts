@@ -3,22 +3,14 @@ import { type MiddlewareHandler, type MiddlewareOperationMap } from '@/types/mid
 /**
  * Reusable typed middleware runner.
  */
-export class MiddlewareRunner<TOperations extends MiddlewareOperationMap> {
-    readonly #handlers: Partial<{
-        [K in keyof TOperations]: MiddlewareHandler<TOperations, K>[]
-    }> = {}
-
+export interface MiddlewareRunner<TOperations extends MiddlewareOperationMap> {
     /**
      * Register middleware for a specific operation.
      *
      * @param method - Operation name.
      * @param handler - Middleware handler.
      */
-    use<TMethod extends keyof TOperations>(method: TMethod, handler: MiddlewareHandler<TOperations, TMethod>): void {
-        const list = (this.#handlers[method] ??= []) as MiddlewareHandler<TOperations, TMethod>[]
-
-        list.push(handler)
-    }
+    use<TMethod extends keyof TOperations>(method: TMethod, handler: MiddlewareHandler<TOperations, TMethod>): void
 
     /**
      * Run middleware chain for a specific operation.
@@ -32,27 +24,46 @@ export class MiddlewareRunner<TOperations extends MiddlewareOperationMap> {
         method: TMethod,
         context: TOperations[TMethod]['context'],
         finalHandler: () => Promise<TOperations[TMethod]['result']>
-    ): Promise<TOperations[TMethod]['result']> {
-        const handlers = (this.#handlers[method] ?? []) as readonly MiddlewareHandler<TOperations, TMethod>[]
+    ): Promise<TOperations[TMethod]['result']>
+}
 
-        let index = -1
+/**
+ * Creates a reusable typed middleware runner.
+ */
+export function createMiddlewareRunner<TOperations extends MiddlewareOperationMap>(): MiddlewareRunner<TOperations> {
+    const handlers: Partial<{
+        [K in keyof TOperations]: MiddlewareHandler<TOperations, K>[]
+    }> = {}
 
-        const dispatch = (position: number): Promise<TOperations[TMethod]['result']> => {
-            if (position <= index) {
-                return Promise.reject(new Error('next() called multiple times'))
+    return {
+        use(method, handler) {
+            const list = (handlers[method] ??= []) as MiddlewareHandler<TOperations, typeof method>[]
+
+            list.push(handler)
+        },
+
+        run(method, context, finalHandler) {
+            const chain = (handlers[method] ?? []) as readonly MiddlewareHandler<TOperations, typeof method>[]
+
+            let index = -1
+
+            const dispatch = (position: number): Promise<TOperations[typeof method]['result']> => {
+                if (position <= index) {
+                    return Promise.reject(new Error('next() called multiple times'))
+                }
+
+                index = position
+
+                const handler = chain[position]
+
+                if (!handler) {
+                    return finalHandler()
+                }
+
+                return handler(context, () => dispatch(position + 1))
             }
 
-            index = position
-
-            const handler = handlers[position]
-
-            if (!handler) {
-                return finalHandler()
-            }
-
-            return handler(context, () => dispatch(position + 1))
-        }
-
-        return dispatch(0)
+            return dispatch(0)
+        },
     }
 }

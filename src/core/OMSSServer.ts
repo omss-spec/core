@@ -1,17 +1,17 @@
-import { HookRegistry } from '@/features/hooks/HookRegistry.js'
-import { HookService } from '@/features/hooks/HookService.js'
-import { PluginRegistry } from '@/features/plugins/PluginRegistry.js'
-import { PluginService } from '@/features/plugins/PluginService.js'
+import { createHookRegistry } from '@/features/hooks/HookRegistry.js'
+import { createHookService, type HookService } from '@/features/hooks/HookService.js'
+import { createPluginRegistry } from '@/features/plugins/PluginRegistry.js'
+import { createPluginService, type PluginService } from '@/features/plugins/PluginService.js'
 import { OMSSServerError } from '@/utils/error.js'
 import type { OMSSConfig } from '@/types/config.js'
-import { SourceService } from '@/features/source/SourceService.js'
-import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
+import { createSourceService, type SourceService } from '@/features/source/SourceService.js'
+import { createProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { ERR, OK } from '@/utils/utils.js'
 import { type Result } from '@/types/utils.js'
-import { ProviderService } from '@/features/providers/ProviderService.js'
+import { createProviderService, type ProviderService } from '@/features/providers/ProviderService.js'
 import { type OMSSHooks } from '@/types/hooks.js'
-import { ExtractorService } from '@/features/extractors/ExtractorService.js'
-import { ExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
+import { createExtractorService, type ExtractorService } from '@/features/extractors/ExtractorService.js'
+import { createExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
 
 /**
  * Core server class for OMSS.
@@ -32,16 +32,16 @@ export class OMSSServer {
     constructor(config: OMSSConfig) {
         this.#config = config
 
-        const hooksRegistry = new HookRegistry<OMSSHooks>()
-        const extractorRegistry = new ExtractorRegistry()
-        const pluginRegistry = new PluginRegistry(this)
-        const providerRegistry = new ProviderRegistry()
+        const hooksRegistry = createHookRegistry<OMSSHooks>()
+        const extractorRegistry = createExtractorRegistry()
+        const pluginRegistry = createPluginRegistry(this)
+        const providerRegistry = createProviderRegistry()
 
-        this.hooks = new HookService<OMSSHooks>(hooksRegistry)
-        this.extractors = new ExtractorService(extractorRegistry, hooksRegistry)
-        this.plugins = new PluginService(pluginRegistry, hooksRegistry)
-        this.providers = new ProviderService(providerRegistry, hooksRegistry)
-        this.sources = new SourceService(this, providerRegistry, hooksRegistry, this.extractors)
+        this.hooks = createHookService<OMSSHooks>(hooksRegistry)
+        this.extractors = createExtractorService(extractorRegistry, hooksRegistry)
+        this.plugins = createPluginService(pluginRegistry, hooksRegistry)
+        this.providers = createProviderService(providerRegistry, hooksRegistry)
+        this.sources = createSourceService(this, providerRegistry, hooksRegistry, this.extractors)
     }
 
     /**

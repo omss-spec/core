@@ -109,6 +109,15 @@ describe('SourceService.getSources', () => {
         }
     })
 
+    it('cleaningFunction getter returns the currently assigned function', () => {
+        const { service } = createSourceService()
+
+        const custom = (obj: { url: string; header: Record<string, string> }) => obj
+        service.cleaningFunction = custom
+
+        expect(service.cleaningFunction).toBe(custom)
+    })
+
     it('afterGetSources middleware can transform the result', async () => {
         const { service, providerRegistry } = createSourceService()
 

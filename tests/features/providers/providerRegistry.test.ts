@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { ProviderRegistry } from '@/features/providers/ProviderRegistry.js'
+import { createProviderRegistry } from '@/features/providers/ProviderRegistry.js'
 import { createProvider, createResolver } from '../../utils.js'
 import { OMSSProviderError } from '@/utils/error.js'
 
 describe('ProviderRegistry', () => {
     it('adds a provider and retrieves it by id', async () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
         const provider = createProvider()
 
         const result = await registry.add(provider)
@@ -16,7 +16,7 @@ describe('ProviderRegistry', () => {
     })
 
     it('returns ERR when adding a duplicate provider id', async () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
         const provider = createProvider()
 
         await registry.add(provider)
@@ -27,7 +27,7 @@ describe('ProviderRegistry', () => {
     })
 
     it('returns ERR for an invalid provider id (whitespace)', async () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
         const provider = createProvider(undefined, undefined, { id: 'bad id' })
 
         const result = await registry.add(provider)
@@ -37,7 +37,7 @@ describe('ProviderRegistry', () => {
     })
 
     it('returns ERR for an invalid resolver namespace (whitespace)', async () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
         const resolver = createResolver(undefined, undefined, { namespace: 'bad ns' })
         const provider = createProvider(resolver)
 
@@ -48,7 +48,7 @@ describe('ProviderRegistry', () => {
     })
 
     it('returns ERR when two providers share a namespace but use different resolvers', async () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
 
         const resolverA = createResolver(undefined, undefined, { namespace: 'shared' })
         const resolverB = createResolver(undefined, undefined, { namespace: 'shared' })
@@ -64,7 +64,7 @@ describe('ProviderRegistry', () => {
     })
 
     it('allows two providers to share the same resolver instance', async () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
 
         const sharedResolver = createResolver(undefined, undefined, { namespace: 'shared' })
 
@@ -78,14 +78,14 @@ describe('ProviderRegistry', () => {
     })
 
     it('returns undefined for an unknown provider id', () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
 
         expect(registry.get('does-not-exist')).toBeUndefined()
         expect(registry.has('does-not-exist')).toBe(false)
     })
 
     it('getAll returns all providers', async () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
 
         const resolverA = createResolver(undefined, undefined, { namespace: 'ns-a' })
         const resolverB = createResolver(undefined, undefined, { namespace: 'ns-b' })
@@ -99,7 +99,7 @@ describe('ProviderRegistry', () => {
     })
 
     it('getAll with filter returns only matching providers', async () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
 
         const resolverA = createResolver(undefined, undefined, { namespace: 'ns-a' })
         const resolverB = createResolver(undefined, undefined, { namespace: 'ns-b' })
@@ -117,7 +117,7 @@ describe('ProviderRegistry', () => {
     })
 
     it('returns ERR when catalog contains wildcard mixed with other IDs', async () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
         const provider = createProvider(undefined, undefined, {
             catalog: async () => ['*', 'some-id'],
         })
@@ -129,7 +129,7 @@ describe('ProviderRegistry', () => {
     })
 
     it('returns ERR when catalog contains an invalid entry', async () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
         const provider = createProvider(undefined, undefined, {
             catalog: async () => ['invalid entry with spaces'],
         })
@@ -141,7 +141,7 @@ describe('ProviderRegistry', () => {
     })
 
     it('accepts a valid catalog with a wildcard', async () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
         const provider = createProvider(undefined, undefined, {
             catalog: async () => ['*'],
         })
@@ -152,7 +152,7 @@ describe('ProviderRegistry', () => {
     })
 
     it('accepts a valid catalog with specific IDs', async () => {
-        const registry = new ProviderRegistry()
+        const registry = createProviderRegistry()
         const provider = createProvider(undefined, undefined, {
             catalog: async () => ['tt1234567', 'tt9999999'],
         })

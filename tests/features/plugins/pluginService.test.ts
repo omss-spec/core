@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { PluginRegistry } from '@/features/plugins/PluginRegistry.js'
-import { PluginService } from '@/features/plugins/PluginService.js'
-import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { createPluginRegistry } from '@/features/plugins/PluginRegistry.js'
+import { createPluginService } from '@/features/plugins/PluginService.js'
+import { createHookRegistry } from '@/features/hooks/HookRegistry.js'
 import { PluginState } from '@/features/plugins/PluginState.js'
 import { OMSSPluginError } from '@/utils/error.js'
 import { createServer } from '../../utils.js'
@@ -10,15 +10,15 @@ import { type OMSSHooks } from '@/types/hooks.js'
 describe('PluginService', () => {
     it('runs hooks around successful plugin registration and exposes plugin state', async () => {
         const server = createServer()
-        const pluginRegistry = new PluginRegistry(server)
-        const hookRegistry = new HookRegistry<OMSSHooks>()
+        const pluginRegistry = createPluginRegistry(server)
+        const hookRegistry = createHookRegistry<OMSSHooks>()
         const before = vi.fn()
         const after = vi.fn()
 
         hookRegistry.add('beforePluginRegister', before)
         hookRegistry.add('afterPluginRegister', after)
 
-        const service = new PluginService(pluginRegistry, hookRegistry)
+        const service = createPluginService(pluginRegistry, hookRegistry)
 
         const plugin = async () => {}
 
@@ -35,13 +35,13 @@ describe('PluginService', () => {
 
     it('runs failure hook when registry.add returns error', async () => {
         const server = createServer()
-        const pluginRegistry = new PluginRegistry(server)
-        const hookRegistry = new HookRegistry<OMSSHooks>()
+        const pluginRegistry = createPluginRegistry(server)
+        const hookRegistry = createHookRegistry<OMSSHooks>()
         const failed = vi.fn()
 
         hookRegistry.add('pluginRegisterFailed', failed)
 
-        const service = new PluginService(pluginRegistry, hookRegistry)
+        const service = createPluginService(pluginRegistry, hookRegistry)
 
         const plugin = async () => {}
 
@@ -58,13 +58,13 @@ describe('PluginService', () => {
 
     it('runs failure hook when plugin throws', async () => {
         const server = createServer()
-        const pluginRegistry = new PluginRegistry(server)
-        const hookRegistry = new HookRegistry<OMSSHooks>()
+        const pluginRegistry = createPluginRegistry(server)
+        const hookRegistry = createHookRegistry<OMSSHooks>()
         const failed = vi.fn()
 
         hookRegistry.add('pluginRegisterFailed', failed)
 
-        const service = new PluginService(pluginRegistry, hookRegistry)
+        const service = createPluginService(pluginRegistry, hookRegistry)
 
         const plugin = async () => {
             throw new Error('boom')
@@ -84,10 +84,10 @@ describe('PluginService', () => {
 
     it('prevents plugins from being registered inside beforePluginRegister hook (guard tested)', async () => {
         const server = createServer()
-        const pluginRegistry = new PluginRegistry(server)
-        const hookRegistry = new HookRegistry<OMSSHooks>()
+        const pluginRegistry = createPluginRegistry(server)
+        const hookRegistry = createHookRegistry<OMSSHooks>()
 
-        const service = new PluginService(pluginRegistry, hookRegistry)
+        const service = createPluginService(pluginRegistry, hookRegistry)
 
         const pluginA = async () => {}
         const pluginB = async () => {}

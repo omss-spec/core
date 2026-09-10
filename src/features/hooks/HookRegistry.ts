@@ -3,27 +3,18 @@
  *
  * Manages lifecycle hooks for OMSS events.
  */
-export class HookRegistry<T> {
-    /**
-     * Map storing arrays of hook handlers for each hook name.
-     */
-    readonly #hooks = new Map<keyof T, unknown[]>()
-
+export interface HookRegistry<T> {
     /**
      * Get all registered hooks immutable.
      * @dangerous - Be careful with this. what you are doing might cause side effects.
      */
-    get hooks(): ReadonlyMap<keyof T, unknown[]> {
-        return this.#hooks
-    }
+    readonly hooks: ReadonlyMap<keyof T, unknown[]>
 
     /**
      * Clear all registered hooks.
      * @dangerous - Be careful with this. Might cause side effects.
      */
-    reset(): void {
-        return this.#hooks.clear()
-    }
+    reset(): void
 
     /**
      * Run all hooks for a lifecycle event with the provided payload.
@@ -32,22 +23,43 @@ export class HookRegistry<T> {
      * @param name - The hook name (key of THooks).
      * @param payload - The payload to pass to each hook handler.
      */
-    async run<K extends keyof T>(name: K, payload: T[K] extends (payload: infer P) => unknown ? P : never): Promise<void> {
-        const fns = this.#hooks.get(name) ?? []
-
-        for (const fn of fns) {
-            await (fn as (payload: unknown) => void | Promise<void>)(payload)
-        }
-    }
+    run<K extends keyof T>(name: K, payload: T[K] extends (payload: infer P) => unknown ? P : never): Promise<void>
 
     /**
      * Add a hook handler for a lifecycle event.
      * @param name - The hook name (key of THooks).
      * @param cb - The hook handler function.
      */
-    add<K extends keyof T>(name: K, cb: T[K]): void {
-        const existing = this.#hooks.get(name) ?? []
+    add<K extends keyof T>(name: K, cb: T[K]): void
+}
 
-        this.#hooks.set(name, [...existing, cb])
+/**
+ * Creates a new {@link HookRegistry}.
+ */
+export function createHookRegistry<T>(): HookRegistry<T> {
+    const hooks = new Map<keyof T, unknown[]>()
+
+    return {
+        get hooks() {
+            return hooks
+        },
+
+        reset() {
+            hooks.clear()
+        },
+
+        async run(name, payload) {
+            const fns = hooks.get(name) ?? []
+
+            for (const fn of fns) {
+                await (fn as (payload: unknown) => void | Promise<void>)(payload)
+            }
+        },
+
+        add(name, cb) {
+            const existing = hooks.get(name) ?? []
+
+            hooks.set(name, [...existing, cb])
+        },
     }
 }

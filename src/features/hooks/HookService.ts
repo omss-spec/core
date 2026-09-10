@@ -1,19 +1,14 @@
-import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { createHookRegistry, type HookRegistry } from '@/features/hooks/HookRegistry.js'
 
-export class HookService<T> {
-    readonly #hookRegistry: HookRegistry<T>
-
-    constructor(hookRegistry: HookRegistry<T> = new HookRegistry<T>()) {
-        this.#hookRegistry = hookRegistry
-    }
-
+/**
+ * The public API for managing OMSS hooks.
+ */
+export interface HookService<T> {
     /**
      * Get all registered hooks immutable. TO ADD HOOKS, USE THE ADD METHOD
      * @dangerous - Be careful with this. what you are doing might cause side effects.
      */
-    get hooks(): ReadonlyMap<keyof T, unknown[]> {
-        return this.#hookRegistry.hooks
-    }
+    readonly hooks: ReadonlyMap<keyof T, unknown[]>
 
     /**
      * Register a hook for a lifecycle event.
@@ -22,17 +17,13 @@ export class HookService<T> {
      * @param name - The hook name (key of THooks).
      * @param cb - The handler function for this hook.
      */
-    add<K extends keyof T>(name: K, cb: T[K]): ReturnType<HookRegistry<T>['add']> {
-        this.#hookRegistry.add(name, cb)
-    }
+    add<K extends keyof T>(name: K, cb: T[K]): ReturnType<HookRegistry<T>['add']>
 
     /**
      * Clear all registered hooks.
      * @dangerous - Be careful with this. Might cause side effects.
      */
-    reset(): ReturnType<HookRegistry<T>['reset']> {
-        return this.#hookRegistry.reset()
-    }
+    reset(): ReturnType<HookRegistry<T>['reset']>
 
     /**
      * Get the hook registry.
@@ -41,7 +32,30 @@ export class HookService<T> {
      * @dangerous
      * @internal
      */
-    __getRegistry(): HookRegistry<T> {
-        return this.#hookRegistry
+    __getRegistry(): HookRegistry<T>
+}
+
+/**
+ * Creates a new {@link HookService}.
+ *
+ * @param hookRegistry - The hook registry to wrap. Defaults to a fresh {@link HookRegistry}.
+ */
+export function createHookService<T>(hookRegistry: HookRegistry<T> = createHookRegistry<T>()): HookService<T> {
+    return {
+        get hooks() {
+            return hookRegistry.hooks
+        },
+
+        add(name, cb) {
+            hookRegistry.add(name, cb)
+        },
+
+        reset() {
+            return hookRegistry.reset()
+        },
+
+        __getRegistry() {
+            return hookRegistry
+        },
     }
 }

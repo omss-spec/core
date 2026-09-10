@@ -44,6 +44,16 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
+            - name: Build
+              if: matrix.node-version != env.PRIMARY_NODE_VERSION
+              run: npm run build
+
+            - name: Build (with bundle analysis)
+              if: matrix.node-version == env.PRIMARY_NODE_VERSION
+              run: npm run build
+              env:
+                  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
             - name: Lint
               if: matrix.node-version == env.PRIMARY_NODE_VERSION
               run: npm run lint
@@ -55,16 +65,6 @@ jobs:
             - name: Security audit
               if: matrix.node-version == env.PRIMARY_NODE_VERSION
               run: npm audit --audit-level=high
-
-            - name: Build
-              if: matrix.node-version != env.PRIMARY_NODE_VERSION
-              run: npm run build
-
-            - name: Build (with bundle analysis)
-              if: matrix.node-version == env.PRIMARY_NODE_VERSION
-              run: npm run build
-              env:
-                  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
             - name: Run tests with coverage
               run: npx vitest run --coverage --reporter=junit --reporter=default --outputFile=test-report.junit.xml

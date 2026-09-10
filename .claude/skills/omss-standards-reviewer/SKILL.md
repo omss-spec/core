@@ -11,15 +11,15 @@ This repo enforces a lot mechanically now: ESLint, Prettier, `tsc --strict`, and
 
 ## What to check
 
-Go through the changed files against the list below. For each finding, cite the file and line, and explain *why* it's wrong by pointing at the existing convention or a specific file that follows it correctly — not just that it differs from some abstract rule.
+Go through the changed files against the list below. For each finding, cite the file and line, and explain _why_ it's wrong by pointing at the existing convention or a specific file that follows it correctly — not just that it differs from some abstract rule.
 
 ### 1. Result-object pattern, not throwing, for expected failures
 
-Look for `throw` in changed `src/**` files. It should only appear for genuinely exceptional/programmer-error situations (see `PluginRegistry.add`'s `catch` block, which *catches* a plugin's throw and converts it into `ERR(...)` rather than letting it propagate). Any new function that can fail in an expected way — validation failure, not-found, etc. — should return `Result<T, E>` via `OK()`/`ERR()` from `@/utils/utils.js`, matching every existing Service method.
+Look for `throw` in changed `src/**` files. It should only appear for genuinely exceptional/programmer-error situations (see `PluginRegistry.add`'s `catch` block, which _catches_ a plugin's throw and converts it into `ERR(...)` rather than letting it propagate). Any new function that can fail in an expected way — validation failure, not-found, etc. — should return `Result<T, E>` via `OK()`/`ERR()` from `@/utils/utils.js`, matching every existing Service method.
 
-### 2. `#private` fields, not `private`
+### 2. Closures, not classes — no `#private`/`private` fields
 
-Search changed `src/**` files for the TypeScript `private` keyword — this repo uses native `#field` private fields exclusively (any `Registry`/`Service` class is a reference). Flag any `private` keyword usage.
+This repo is functional: every Registry/Service/util module is a `createX(...)` factory returning a plain object literal that implements an `interface X` of the same name, with internal state kept in closure-scoped `const`/`let` variables — not a class, and not `#private`/`private` fields (any existing `Registry`/`Service` file is a reference). The only two classes in the codebase are `OMSSServer` and the `OMSSError` hierarchy in `src/utils/error.ts` — flag any _new_ `class` outside those two, and flag any `private`/`#private` field usage (there's no class to attach it to).
 
 ### 3. `.js` import extensions
 
@@ -27,8 +27,8 @@ Every relative/aliased import of a local `.ts` file must end in `.js` (NodeNext 
 
 ### 4. File naming
 
-- A file whose primary export is a class or enum: PascalCase filename matching that export exactly (`PluginRegistry.ts` exports `class PluginRegistry`).
-- A file that groups multiple related exports (types, error classes, free functions): camelCase, named for the group rather than any single export (`error.ts`, `utils.ts`, `types/provider.ts`).
+- A file whose primary export is a factory function: PascalCase filename matching its companion interface exactly (`PluginRegistry.ts` exports `interface PluginRegistry` + `function createPluginRegistry(...)`). The same rule applies to the two class exceptions (`OMSSServer.ts` exports `class OMSSServer`).
+- A file that groups multiple related exports (types, error classes, free functions): camelCase, named for the group rather than any single export (`error.ts`, `utils.ts`, `types/provider.ts`, `defineProvider.ts`).
 - Barrels are always literally named `public-api.ts`.
 - Test files mirror the `src/` path under `tests/`, always camelCase regardless of the source file's casing (`OMSSServer.ts` → `tests/core/omssServer.test.ts`).
 
@@ -40,7 +40,7 @@ Every exported class, and every public (non-`#private`) method/property on it, s
 
 ### 6. `public-api.ts` barrel wiring
 
-If a change adds a new runtime export meant for external consumers — a class plugin authors would `extends`, a helper function — check whether it needs to be added to its feature's `public-api.ts`. Only `hooks`, `plugins`, `providers`, and `resolvers` currently have one (see `src/public-api.ts` for which features are wired in); `extractors` and `source` intentionally don't. If it's a new type, confirm `src/public-api.ts`'s `export type *` block covers its file. A new public class that's unreachable from the package's actual entrypoint is a real bug, not a style nit.
+If a change adds a new runtime export meant for external consumers — a `defineX`-style helper plugin authors would call, a helper function — check whether it needs to be added to its feature's `public-api.ts`. Only `hooks`, `plugins`, `providers`, and `resolvers` currently have one (see `src/public-api.ts` for which features are wired in); `extractors` and `source` intentionally don't. If it's a new type, confirm `src/public-api.ts`'s `export type *` block covers its file. A new public class that's unreachable from the package's actual entrypoint is a real bug, not a style nit.
 
 ### 7. Hook lifecycle triple
 
@@ -52,7 +52,7 @@ Check the PR title (or, for a local diff, ask what the commit/PR title will be) 
 
 ### 9. Test coverage
 
-This repo enforces **100%** coverage as a hard CI gate, not a target. If the diff adds any branch, error path, or new file not covered by `vitest.config.ts`'s exclude list (`src/types/**`, `src/index.ts`, `src/**/public-api.ts`, `src/**/Base*.ts`), check there's a test exercising it — actually reason about whether every new branch has a corresponding assertion, don't just trust that `npm test` was run. Hand off to the `coverage-complete-test-writer` skill for actually writing anything missing.
+This repo enforces **100%** coverage as a hard CI gate, not a target. If the diff adds any branch, error path, or new file not covered by `vitest.config.ts`'s exclude list (`src/types/**`, `src/index.ts`, `src/**/public-api.ts`), check there's a test exercising it — actually reason about whether every new branch has a corresponding assertion, don't just trust that `npm test` was run. Hand off to the `coverage-complete-test-writer` skill for actually writing anything missing.
 
 ## What NOT to flag
 

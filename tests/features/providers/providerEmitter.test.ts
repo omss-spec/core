@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { HookRegistry } from '@/features/hooks/HookRegistry.js'
+import { createHookRegistry } from '@/features/hooks/HookRegistry.js'
 import { createProviderResultEmitter } from '@/features/providers/ProviderResultEmitter.js'
 import { OMSSProviderError } from '@/utils/error.js'
 import { createProvider, createProviderEmitter } from '../../utils.js'
@@ -10,7 +10,7 @@ import { type ParsedOMSSId } from '@/types/resolver.js'
 describe('createProviderResultEmitter', () => {
     it('emits sources, subtitles, and aggregates errors with hooks', () => {
         const provider = createProvider()
-        const hookRegistry = new HookRegistry<ProviderHooks>()
+        const hookRegistry = createHookRegistry<ProviderHooks>()
 
         const sourceHook = vi.fn()
         const subtitleHook = vi.fn()
@@ -48,7 +48,7 @@ describe('createProviderResultEmitter', () => {
 
     it('fatal aggregates accumulated errors and returns ERR', () => {
         const provider = createProvider()
-        const hookRegistry = new HookRegistry<ProviderHooks>()
+        const hookRegistry = createHookRegistry<ProviderHooks>()
         const errorHook = vi.fn()
 
         hookRegistry.add('error', errorHook)
@@ -181,7 +181,7 @@ describe('ProviderResultEmitter – utils.subtitle.parseFormat', () => {
 
 describe('ProviderResultEmitter – emit / debug / info / warn', () => {
     it('emit calls hook with provided data', () => {
-        const hookRegistry = new HookRegistry<ProviderHooks>()
+        const hookRegistry = createHookRegistry<ProviderHooks>()
         const hook = vi.fn()
         hookRegistry.add('custom.event', hook)
 
@@ -192,7 +192,7 @@ describe('ProviderResultEmitter – emit / debug / info / warn', () => {
     })
 
     it('emit ignores reserved action names', () => {
-        const hookRegistry = new HookRegistry<ProviderHooks>()
+        const hookRegistry = createHookRegistry<ProviderHooks>()
         const hook = vi.fn()
         hookRegistry.add('source', hook)
 
@@ -204,7 +204,7 @@ describe('ProviderResultEmitter – emit / debug / info / warn', () => {
     })
 
     it('emit ignores actions with whitespace', () => {
-        const hookRegistry = new HookRegistry<ProviderHooks>()
+        const hookRegistry = createHookRegistry<ProviderHooks>()
         const hook = vi.fn()
         hookRegistry.add('bad event', hook)
 
@@ -215,7 +215,7 @@ describe('ProviderResultEmitter – emit / debug / info / warn', () => {
     })
 
     it('debug / info / warn run their respective hooks', () => {
-        const hookRegistry = new HookRegistry<ProviderHooks>()
+        const hookRegistry = createHookRegistry<ProviderHooks>()
         const debugHook = vi.fn()
         const infoHook = vi.fn()
         const warnHook = vi.fn()
@@ -238,7 +238,7 @@ describe('ProviderResultEmitter – emit / debug / info / warn', () => {
 describe('ProviderResultEmitter – source with audioTracks', () => {
     it('applies cleaning function to audio tracks', () => {
         const clean = vi.fn((obj) => ({ ...obj, url: obj.url + '?cleaned', header: {} }))
-        const emitter = createProviderResultEmitter(createProvider(), new HookRegistry<ProviderHooks>(), clean, {} as ParsedOMSSId)
+        const emitter = createProviderResultEmitter(createProvider(), createHookRegistry<ProviderHooks>(), clean, {} as ParsedOMSSId)
 
         emitter.source({
             type: 'hls',

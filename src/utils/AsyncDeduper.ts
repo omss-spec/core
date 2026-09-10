@@ -8,18 +8,14 @@
  * @typeParam TKey - Cache key type.
  * @typeParam TValue - Promise resolution type.
  */
-export class AsyncDeduper<TKey, TValue> {
-    readonly #entries = new Map<TKey, Promise<TValue>>()
-
+export interface AsyncDeduper<TKey, TValue> {
     /**
      * Returns the current in-flight Promise for a key, if one exists.
      *
      * @param key - In-flight request key.
      * @returns Existing Promise or undefined.
      */
-    get(key: TKey): Promise<TValue> | undefined {
-        return this.#entries.get(key)
-    }
+    get(key: TKey): Promise<TValue> | undefined
 
     /**
      * Check whether a key currently has an in-flight Promise.
@@ -27,9 +23,7 @@ export class AsyncDeduper<TKey, TValue> {
      * @param key - In-flight request key.
      * @returns True if the key is currently in flight.
      */
-    has(key: TKey): boolean {
-        return this.#entries.has(key)
-    }
+    has(key: TKey): boolean
 
     /**
      * Delete a key manually.
@@ -37,16 +31,12 @@ export class AsyncDeduper<TKey, TValue> {
      * @param key - In-flight request key.
      * @returns True if an entry existed and was removed.
      */
-    delete(key: TKey): boolean {
-        return this.#entries.delete(key)
-    }
+    delete(key: TKey): boolean
 
     /**
      * Clear all tracked in-flight requests.
      */
-    clear(): void {
-        this.#entries.clear()
-    }
+    clear(): void
 
     /**
      * Run a Promise factory for a key, reusing an existing in-flight Promise
@@ -56,19 +46,49 @@ export class AsyncDeduper<TKey, TValue> {
      * @param factory - Factory that creates the Promise when no request exists yet.
      * @returns Shared or newly created Promise.
      */
-    run(key: TKey, factory: () => Promise<TValue>): Promise<TValue> {
-        const existing = this.#entries.get(key)
+    run(key: TKey, factory: () => Promise<TValue>): Promise<TValue>
+}
 
-        if (existing) {
-            return existing
-        }
+/**
+ * Creates a new {@link AsyncDeduper}.
+ *
+ * @typeParam TKey - Cache key type.
+ * @typeParam TValue - Promise resolution type.
+ */
+export function createAsyncDeduper<TKey, TValue>(): AsyncDeduper<TKey, TValue> {
+    const entries = new Map<TKey, Promise<TValue>>()
 
-        const promise = factory().finally(() => {
-            this.#entries.delete(key)
-        })
+    return {
+        get(key) {
+            return entries.get(key)
+        },
 
-        this.#entries.set(key, promise)
+        has(key) {
+            return entries.has(key)
+        },
 
-        return promise
+        delete(key) {
+            return entries.delete(key)
+        },
+
+        clear() {
+            entries.clear()
+        },
+
+        run(key, factory) {
+            const existing = entries.get(key)
+
+            if (existing) {
+                return existing
+            }
+
+            const promise = factory().finally(() => {
+                entries.delete(key)
+            })
+
+            entries.set(key, promise)
+
+            return promise
+        },
     }
 }

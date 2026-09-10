@@ -1,5 +1,4 @@
-import type { ParsedOMSSId } from '@/types/resolver.js'
-import type { BaseResolver } from '@/features/resolvers/BaseResolver.js'
+import type { OMSSResolver, ParsedOMSSId } from '@/types/resolver.js'
 import type { OMSSProviderError } from '@/utils/error.js'
 import { type NonEmptyArray, type Result } from '@/types/utils.js'
 
@@ -13,7 +12,7 @@ import { type ExtractorService } from '@/features/extractors/ExtractorService.js
  *               The return type of P['resolve'] determines the `meta`
  *               parameter shape of getSources().
  */
-export interface OMSSProvider<P extends BaseResolver<unknown>> {
+export interface OMSSProvider<P extends OMSSResolver<unknown>> {
     /** Provider ID. Must be unique. */
     readonly id: string
 
@@ -48,7 +47,7 @@ export interface OMSSProvider<P extends BaseResolver<unknown>> {
 /**
  * Extract the metadata type from a resolver's resolve method.
  */
-export type ResolverMetadata<R extends BaseResolver<unknown>> = Extract<Awaited<ReturnType<R['resolve']>>, { ok: true }> extends { value: infer T } ? T : never
+export type ResolverMetadata<R extends OMSSResolver<unknown>> = Extract<Awaited<ReturnType<R['resolve']>>, { ok: true }> extends { value: infer T } ? T : never
 
 /**
  * The object passed to providers when they are executed.
@@ -76,7 +75,7 @@ export type ProviderSourcesMeta<T> = {
 /**
  * Provider with an unknown resolver. Utils for other services and registries
  */
-export type UnknownProvider = OMSSProvider<BaseResolver<unknown>>
+export type UnknownProvider = OMSSProvider<OMSSResolver<unknown>>
 
 /**
  * The result of a provider getSources call.

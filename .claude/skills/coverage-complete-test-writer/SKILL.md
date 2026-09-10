@@ -16,11 +16,11 @@ description: Writes or extends Vitest tests for a source change in the @omss/cor
 Before writing setup code, check `tests/utils.ts` for a factory that already builds what you need:
 
 - `createServer(config?)` — a bare `OMSSServer`
-- `createProvider(resolver?, getSources?, overrides?)` / `createResolver(response?, resolve?, overrides?)` — test doubles implementing `OMSSProvider`/`BaseResolver`, with sensible defaults so you only override what the test actually cares about
+- `createProvider(resolver?, getSources?, overrides?)` / `createResolver(response?, resolve?, overrides?)` — plain objects implementing `OMSSProvider`/`OMSSResolver`, with sensible defaults so you only override what the test actually cares about
 - `createExtractor(matches?)` — a test `Extractor` with `vi.fn()` matcher/parse
 - `createProviderService()`, `createSourceCore()`, `createSourceService()`, `createProviderEmitter(hookRegistry?)`, `createRunner<T>()`, `createAsyncDeduper<T, V>()` — pre-wired feature instances with their registries/hook registries already constructed correctly
 
-Reuse these rather than constructing `new XRegistry()` / `new XService()` by hand in each test — that's exactly what they exist to avoid, and it's how every existing test file is written. If the change you're testing needs a *new* recurring setup shape (e.g. a brand-new feature module), add a factory to `tests/utils.ts` alongside the existing ones instead of duplicating it per test file.
+Reuse these rather than calling `createXRegistry()` / `createXService()` by hand in each test — that's exactly what they exist to avoid, and it's how every existing test file is written. If the change you're testing needs a _new_ recurring setup shape (e.g. a brand-new feature module), add a factory to `tests/utils.ts` alongside the existing ones instead of duplicating it per test file.
 
 ### 2. Place the test at the mirrored path
 
@@ -40,11 +40,11 @@ For every `if` / `?:` / early-return / `catch` your change touches, write (or co
 - Any new hook (`before<X>` / `after<X>` / `<x>Failed`) — at minimum, confirm it fires with the right payload
 - Callbacks/closures passed to something else (arrow functions, `.map()` callbacks) — these are easy to leave uncovered because the outer function looks tested even when an inner branch isn't
 
-Match the existing test style: `describe`/`it` from Vitest, `expect(result.ok).toBe(true/false)` for `Result` values, and `await` every promise-returning assertion — `expect(promise).rejects.toThrow(...)` needs `await` in front of the *whole* `expect(...)` expression, because a missing `await` there means the assertion may never actually run before the test finishes. That's a real bug this project has hit in practice, not a style nit.
+Match the existing test style: `describe`/`it` from Vitest, `expect(result.ok).toBe(true/false)` for `Result` values, and `await` every promise-returning assertion — `expect(promise).rejects.toThrow(...)` needs `await` in front of the _whole_ `expect(...)` expression, because a missing `await` there means the assertion may never actually run before the test finishes. That's a real bug this project has hit in practice, not a style nit.
 
 ### 4. Know what's intentionally excluded
 
-Don't chase coverage on: `src/types/**` (type-only), `src/index.ts` (re-export shim), `src/**/public-api.ts` (barrels), `src/**/Base*.ts` (abstract base classes, exercised indirectly through concrete test subclasses like `createResolver`'s `Resolver extends BaseResolver`). These are excluded in `vitest.config.ts` on purpose — don't add tests just to "cover" them, and don't be alarmed if they show as uncovered in isolation.
+Don't chase coverage on: `src/types/**` (type-only), `src/index.ts` (re-export shim), `src/**/public-api.ts` (barrels). These are excluded in `vitest.config.ts` on purpose — don't add tests just to "cover" them, and don't be alarmed if they show as uncovered in isolation. Everything else, including `defineProvider.ts`/`defineResolver.ts`, is a normal source file and needs real coverage.
 
 ### 5. Verify against the actual gate — don't assume
 

@@ -1,1 +1,1 @@
-export { BaseProvider } from '@/features/providers/BaseProvider.js'
+export { defineProvider } from '@/features/providers/defineProvider.js'

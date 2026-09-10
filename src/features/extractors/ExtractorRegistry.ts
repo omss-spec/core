@@ -5,52 +5,69 @@ import { type Extractor } from '@/types/extractor.js'
  *
  * Manages all extractors.
  */
-export class ExtractorRegistry {
-    /**
-     * Array of extractors.
-     */
-    readonly #extractors = Array<Extractor>()
-
+export interface ExtractorRegistry {
     /**
      * Get all extractors.
      */
-    get extractors(): Readonly<Extractor[]> {
-        return this.#extractors
-    }
+    readonly extractors: Readonly<Extractor[]>
 
     /**
      * Clear all extractors.
      */
-    reset(): void {
-        this.#extractors.length = 0
-    }
+    reset(): void
 
     /**
      * Add an extractor.
      * @param extractor - Extractor to add.
      */
-    add(extractor: Extractor): void {
-        if (this.#extractors.some((e) => e === extractor)) return
-
-        this.#extractors.push(extractor)
-    }
+    add(extractor: Extractor): void
 
     /**
      * Check if an extractor is already registered.
      * @param extractor - Extractor to check.
      */
-    has(extractor: Extractor): boolean {
-        return this.#extractors.includes(extractor)
-    }
+    has(extractor: Extractor): boolean
 
     /**
      * Remove an extractor.
      * @param extractor - Extractor to remove.
      * @returns True if the extractor was removed, false otherwise.
      */
-    remove(extractor: Extractor): boolean {
-        if (!this.has(extractor)) return false
-        this.#extractors.splice(this.#extractors.indexOf(extractor), 1)
-        return true
+    remove(extractor: Extractor): boolean
+}
+
+/**
+ * Creates a new {@link ExtractorRegistry}.
+ */
+export function createExtractorRegistry(): ExtractorRegistry {
+    /**
+     * Array of extractors.
+     */
+    const extractors = Array<Extractor>()
+
+    return {
+        get extractors() {
+            return extractors
+        },
+
+        reset() {
+            extractors.length = 0
+        },
+
+        add(extractor) {
+            if (extractors.some((e) => e === extractor)) return
+
+            extractors.push(extractor)
+        },
+
+        has(extractor) {
+            return extractors.includes(extractor)
+        },
+
+        remove(extractor) {
+            if (!extractors.includes(extractor)) return false
+            extractors.splice(extractors.indexOf(extractor), 1)
+            return true
+        },
     }
 }
