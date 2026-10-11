@@ -56,7 +56,9 @@ export class OMSSServer {
      * @param config - The immutable server configuration.
      */
     constructor(config: OMSSConfig) {
-        this.#config = config
+        // Copy defensively - otherwise mutating the caller's original config object
+        // after construction would silently change server.config too.
+        this.#config = { ...config }
 
         const hooksRegistry = createHookRegistry<OMSSHooks>()
         const extractorRegistry = createExtractorRegistry()
@@ -93,7 +95,14 @@ export class OMSSServer {
      * @returns The decorated property's name, or an error if `name` already exists or a dependency is missing.
      */
     decorate<T>(name: string, value: T, deps: string[] = []): Result<string, OMSSServerError> {
-        if (Object.hasOwn(this, name)) {
+        if (!name) {
+            return ERR(new OMSSServerError('Decorator name must be a non-empty string'))
+        }
+
+        // Checks the whole prototype chain, not just own properties - otherwise a
+        // decorator could permanently shadow a framework member that lives on the
+        // prototype (e.g. "config", "decorate", "hasDecorator", "getDecorator").
+        if (name in this) {
             return ERR(
                 new OMSSServerError(`Decorator "${name}" already exists`, {
                     cause: {

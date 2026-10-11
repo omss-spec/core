@@ -156,9 +156,11 @@ describe('ProviderResultEmitter – utils.source.parseQuality', () => {
         const { utils } = createProviderEmitter()
 
         expect(utils.source.parseQuality('25000kbps')).toBe('4K')
-        expect(utils.source.parseQuality('8000kbps')).toBe('8K')
-        expect(utils.source.parseQuality('3000kbps')).toBe('4K')
-        expect(utils.source.parseQuality('1000kbps')).toBe('HD')
+        // Regression: a 3-4 digit kbps figure must be read as a bitrate, not
+        // misinterpreted as a pixel-height resolution (8000kbps is 8 Mbps, not 8K).
+        expect(utils.source.parseQuality('8000kbps')).toBe('FHD')
+        expect(utils.source.parseQuality('3000kbps')).toBe('HD')
+        expect(utils.source.parseQuality('1000kbps')).toBe('SD')
     })
 })
 
@@ -176,6 +178,43 @@ describe('ProviderResultEmitter – utils.subtitle.parseFormat', () => {
     it('defaults to vtt for unknown format', () => {
         const { utils } = createProviderEmitter()
         expect(utils.subtitle.parseFormat('unknown')).toBe('vtt')
+    })
+})
+
+describe('createProviderResultEmitter – throwing hook handlers', () => {
+    it('does not produce an unhandled promise rejection when a hook handler throws', async () => {
+        const hookRegistry = createHookRegistry<ProviderHooks>()
+        hookRegistry.add('source', async () => {
+            throw new Error('boom')
+        })
+
+        const emitter = createProviderResultEmitter(createProvider(), hookRegistry, (obj) => obj, {} as ParsedOMSSId)
+
+        const onUnhandledRejection = vi.fn()
+        process.on('unhandledRejection', onUnhandledRejection)
+
+        try {
+            emitter.source({ type: 'hls', url: 'https://example.com', header: {}, streamable: true, quality: 'HD' })
+
+            // Flush microtasks so the hook's rejected promise has a chance to surface.
+            await new Promise((resolve) => setTimeout(resolve, 0))
+            await new Promise((resolve) => setTimeout(resolve, 0))
+
+            expect(onUnhandledRejection).not.toHaveBeenCalled()
+        } finally {
+            process.off('unhandledRejection', onUnhandledRejection)
+        }
+    })
+
+    it('does not throw synchronously when a done() hook handler throws', () => {
+        const hookRegistry = createHookRegistry<ProviderHooks>()
+        hookRegistry.add('done', () => {
+            throw new Error('boom')
+        })
+
+        const emitter = createProviderResultEmitter(createProvider(), hookRegistry, (obj) => obj, {} as ParsedOMSSId)
+
+        expect(() => emitter.done()).not.toThrow()
     })
 })
 

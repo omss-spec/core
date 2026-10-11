@@ -4,4 +4,4 @@
  */
 export * from '@/utils/error.js'
 export * from '@/utils/utils.js'
-export { SAFE_UNIQUE_STRING } from '@/utils/regexp.js'
+export { CATALOG_ENTRY, DASH_REGEX, HLS_REGEX, MKV_REGEX, MP4_REGEX, SAFE_UNIQUE_STRING, SRT_REGEX, VTT_REGEX } from '@/utils/regexp.js'

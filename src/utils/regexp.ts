@@ -1,7 +1,7 @@
 /**
  * Regex for validating namespace names.
  */
-const SAFE_UNIQUE_STRING_PATTERN = '[a-z0-9-]+'
+const SAFE_UNIQUE_STRING_PATTERN = '[a-z0-9:-]+'
 export const SAFE_UNIQUE_STRING = new RegExp(`^${SAFE_UNIQUE_STRING_PATTERN}$`)
 
 /**

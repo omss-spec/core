@@ -57,9 +57,10 @@ export function createSourceCore(omssServer: OMSSServer, providerRegistry: Provi
             }
 
             // we know that the id is valid now. Now we got to find the providers that can handle that namespace. If a specific provider is requested, we only look for that one.
+            // Disabled providers are never used during source gathering - see OMSSProvider.enabled.
             const providers: UnknownProvider[] = opts.providerId
-                ? providerRegistry.getAll((p) => p.id === opts.providerId && p.resolver.namespace === parsed.value.namespace)
-                : providerRegistry.getAll((p) => p.resolver.namespace === parsed.value.namespace)
+                ? providerRegistry.getAll((p) => p.enabled && p.id === opts.providerId && p.resolver.namespace === parsed.value.namespace)
+                : providerRegistry.getAll((p) => p.enabled && p.resolver.namespace === parsed.value.namespace)
 
             // if no provider can handle that namespace, return an error
             if (providers.length === 0) {

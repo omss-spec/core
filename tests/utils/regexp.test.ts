@@ -173,7 +173,7 @@ describe('CATALOG_ENTRY', () => {
         expect(CATALOG_ENTRY.test('ABC')).toBe(false)
         expect(CATALOG_ENTRY.test('Abc')).toBe(false)
         expect(CATALOG_ENTRY.test('id_with_underscore')).toBe(false)
-        expect(CATALOG_ENTRY.test('provider:id')).toBe(false)
+        expect(CATALOG_ENTRY.test('namespace:value')).toBe(true)
         expect(CATALOG_ENTRY.test('movie/123')).toBe(false)
         expect(CATALOG_ENTRY.test('https://example.com')).toBe(false)
         expect(CATALOG_ENTRY.test('😀')).toBe(false)

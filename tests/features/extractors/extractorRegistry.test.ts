@@ -56,6 +56,19 @@ describe('ExtractorRegistry', () => {
         expect(registry.remove(createExtractor())).toBe(false)
     })
 
+    it('extractors getter returns a defensive copy that cannot mutate internal state', () => {
+        const extractor = createExtractor()
+
+        registry.add(extractor)
+
+        const snapshot = registry.extractors
+        snapshot.push(createExtractor())
+        snapshot.length = 0
+
+        expect(registry.extractors).toHaveLength(1)
+        expect(registry.extractors).toEqual([extractor])
+    })
+
     it('reset clears all extractors', () => {
         registry.add(createExtractor())
         registry.add(createExtractor())

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { OMSSSourceGatheringError } from '@/utils/error.js'
+import { OMSSResolverError, OMSSSourceGatheringError } from '@/utils/error.js'
 import { createProvider, createResolver, createSourceService } from '../../utils.js'
 import { createHookService } from '@/features/hooks/HookService.js'
 import { type ProviderHooks } from '@/types/hooks.js'
@@ -45,7 +45,7 @@ describe('SourceService.getSources', () => {
         expect(after).toHaveBeenCalledTimes(1)
     })
 
-    it('fires getSourcesFailed hook on failure', async () => {
+    it('fires getSourcesFailed hook on failure with an OMSSSourceGatheringError (not OMSSProviderError)', async () => {
         const { service, hookRegistry } = createSourceService()
 
         const failed = vi.fn()
@@ -54,6 +54,19 @@ describe('SourceService.getSources', () => {
         await service.getSources('tmdb:99999')
 
         expect(failed).toHaveBeenCalledTimes(1)
+        expect(failed.mock.calls[0]?.[0].error).toBeInstanceOf(OMSSSourceGatheringError)
+    })
+
+    it('returns ERR instead of throwing for malformed percent-encoding in the id', async () => {
+        const { service } = createSourceService()
+
+        const result = await service.getSources('tmdb:%')
+
+        expect(result.ok).toBe(false)
+        if (!result.ok) {
+            expect(result.error).toBeInstanceOf(OMSSSourceGatheringError)
+            expect(result.error.cause).toBeInstanceOf(OMSSResolverError)
+        }
     })
 
     it('middleware intercepts getSources', async () => {
@@ -206,5 +219,33 @@ describe('SourceService.getSources', () => {
 
         expect(res.ok).toBe(true)
         if (res.ok) expect((res.value as any).__test).toBe(true)
+    })
+
+    it('gives coalesced callers independent copies of the sources/subtitles/errors arrays', async () => {
+        const { service, providerRegistry } = createSourceService()
+
+        const resolver = createResolver({ value: 'meta' })
+        Object.assign(resolver, { namespace: 'tmdb' })
+        const provider = createProvider(resolver, async (_req, result) => {
+            result.source({ type: 'hls', url: 'https://example.com/s.m3u8', header: {}, streamable: true, quality: 'HD' })
+            return result.done()
+        })
+        await providerRegistry.add(provider)
+
+        const [r1, r2] = await Promise.all([service.getSources('tmdb:12345'), service.getSources('tmdb:12345')])
+
+        expect(r1.ok).toBe(true)
+        expect(r2.ok).toBe(true)
+        if (r1.ok && r2.ok) {
+            // Same underlying in-flight execution, but each caller must get its own
+            // container objects/arrays - mutating one must not affect the other.
+            expect(r1.value).not.toBe(r2.value)
+            expect(r1.value.sources).not.toBe(r2.value.sources)
+
+            const firstSource = r1.value.sources[0]
+            expect(firstSource).toBeDefined()
+            if (firstSource) r1.value.sources.push({ ...firstSource })
+            expect(r2.value.sources).toHaveLength(1)
+        }
     })
 })

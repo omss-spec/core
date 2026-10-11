@@ -1,6 +1,6 @@
 import type { OMSSPluginOptions, UnknownPluginType } from '@/types/plugin.js'
 import { type OMSSProviderResult, type Source, type Subtitle, type UnknownProvider } from '@/types/provider.js'
-import { type OMSSExtractorError, type OMSSProviderError } from '@/utils/error.js'
+import { type OMSSExtractorError, type OMSSProviderError, type OMSSSourceGatheringError } from '@/utils/error.js'
 import { type OMSSId, type ParsedOMSSId } from '@/types/resolver.js'
 import { type GatheredSources } from '@/types/source.js'
 import { type Extractor } from '@/types/extractor.js'
@@ -65,7 +65,7 @@ export type OMSSHooks = {
     /**
      * Called when a getSources call fails entirely (no provider succeeded).
      */
-    getSourcesFailed: (payload: { omssId: OMSSId; providerId?: string | undefined; error: OMSSProviderError }) => void | Promise<void>
+    getSourcesFailed: (payload: { omssId: OMSSId; providerId?: string | undefined; error: OMSSSourceGatheringError }) => void | Promise<void>
 
     /**
      * Called before an extractor is registered.

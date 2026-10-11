@@ -222,12 +222,27 @@ describe('parseOMSSId', () => {
             expect(result.value.values).toEqual(['hello world', 'test/movie'])
         })
 
-        it('throws on malformed URI encoding', () => {
-            expect(() => parseOMSSId('tmdb:%')).toThrow(URIError)
+        it('returns ERR instead of throwing on malformed URI encoding', () => {
+            const result = parseOMSSId('tmdb:%')
+
+            expect(result.ok).toBe(false)
+
+            if (result.ok) return
+
+            expect(result.error).toBeInstanceOf(OMSSResolverError)
+            expect(result.error.message).toContain('malformed percent-encoding')
+            expect(result.error.cause).toBeInstanceOf(URIError)
         })
 
-        it('throws on incomplete percent encoding', () => {
-            expect(() => parseOMSSId('tmdb:%A')).toThrow(URIError)
+        it('returns ERR instead of throwing on incomplete percent encoding', () => {
+            const result = parseOMSSId('tmdb:%A')
+
+            expect(result.ok).toBe(false)
+
+            if (result.ok) return
+
+            expect(result.error).toBeInstanceOf(OMSSResolverError)
+            expect(result.error.message).toContain('malformed percent-encoding')
         })
     })
 

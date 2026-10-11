@@ -43,7 +43,13 @@ export function parseOMSSId(id: OMSSId): Result<ParsedOMSSId, OMSSResolverError>
         }
     }
 
-    const decodedValues = values.map((value) => decodeURIComponent(value))
+    let decodedValues: string[]
+
+    try {
+        decodedValues = values.map((value) => decodeURIComponent(value))
+    } catch (err) {
+        return ERR(new OMSSResolverError(`Invalid OMSS ID "${id}": malformed percent-encoding`, { cause: err }))
+    }
 
     return OK({
         namespace,

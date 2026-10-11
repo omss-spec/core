@@ -38,6 +38,18 @@ import { type ParsedOMSSId } from '@/types/resolver.js'
  */
 export function createProviderResultEmitter(provider: Readonly<UnknownProvider>, hookReg: HookRegistry<ProviderHooks>, cleaningFunc: CleaningFunction, id: ParsedOMSSId): ProviderResultEmitter {
     /**
+     * Runs a lifecycle hook without letting a throwing handler surface as an
+     * unhandled promise rejection. These hooks are fire-and-forget notifications -
+     * a bug in a consumer's handler must not crash the process.
+     *
+     * @param name - The hook name to run.
+     * @param payload - The payload to pass to each handler.
+     */
+    function notify(name: keyof ProviderHooks, payload: unknown): void {
+        void hookReg.run(name, payload as never).catch(() => {})
+    }
+
+    /**
      * Accumulated sources emitted via `source()` during this execution.
      * Flushed into the final result when `done()` is called.
      */
@@ -122,6 +134,32 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
                         return 'SD'
                     }
 
+                    // Check for an explicit bitrate unit before the generic digit-run
+                    // match below - otherwise a 3-4 digit kbps figure (e.g. "8000kbps")
+                    // would be misread as a pixel-height resolution (e.g. "8000" -> 8K).
+                    const bitrateMatch = value.match(/(\d+(?:\.\d+)?)\s*(mbps|kbps)/)
+
+                    if (bitrateMatch) {
+                        const bitrate = Number(bitrateMatch[1])
+                        const unit = bitrateMatch[2]
+
+                        const mbps = unit === 'kbps' ? bitrate / 1000 : bitrate
+
+                        if (mbps >= 25) {
+                            return '4K'
+                        }
+
+                        if (mbps >= 8) {
+                            return 'FHD'
+                        }
+
+                        if (mbps >= 3) {
+                            return 'HD'
+                        }
+
+                        return 'SD'
+                    }
+
                     const resolutionMatch = value.match(/(\d{3,4})(?:p|x\d{3,4})?/)
 
                     if (resolutionMatch) {
@@ -150,29 +188,6 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
                         if (resolution > 0) {
                             return 'SD'
                         }
-                    }
-
-                    const bitrateMatch = value.match(/(\d+(?:\.\d+)?)\s*(mbps|kbps)/)
-
-                    if (bitrateMatch) {
-                        const bitrate = Number(bitrateMatch[1])
-                        const unit = bitrateMatch[2]
-
-                        const mbps = unit === 'kbps' ? bitrate / 1000 : bitrate
-
-                        if (mbps >= 25) {
-                            return '4K'
-                        }
-
-                        if (mbps >= 8) {
-                            return 'FHD'
-                        }
-
-                        if (mbps >= 3) {
-                            return 'HD'
-                        }
-
-                        return 'SD'
                     }
 
                     return 'Auto'
@@ -215,7 +230,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
             if (/\s/.test(action) || Object.keys(this).includes(action)) {
                 return
             }
-            void hookReg.run(action, { data, provider, id, timestamp: new Date().toISOString() })
+            notify(action, { data, provider, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -225,7 +240,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          * @param args - Values to log, forwarded as-is (same semantics as `console.debug`).
          */
         debug(...args: unknown[]): void {
-            void hookReg.run('debug', { provider, args, id, timestamp: new Date().toISOString() })
+            notify('debug', { provider, args, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -235,7 +250,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          * @param args - Values to log.
          */
         info(...args: unknown[]): void {
-            void hookReg.run('info', { provider, args, id, timestamp: new Date().toISOString() })
+            notify('info', { provider, args, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -245,7 +260,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          * @param args - Values to log.
          */
         warn(...args: unknown[]): void {
-            void hookReg.run('warn', { provider, args, id, timestamp: new Date().toISOString() })
+            notify('warn', { provider, args, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -261,7 +276,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
          */
         error(error: OMSSProviderError): void {
             errors.push(error)
-            void hookReg.run('error', { provider, error, id, timestamp: new Date().toISOString() })
+            notify('error', { provider, error, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -313,7 +328,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
 
             sources.push(fullSource)
 
-            void hookReg.run('source', {
+            notify('source', {
                 provider,
                 source: fullSource,
                 id,
@@ -336,7 +351,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
             subtitle.header = header
             const fullSub = { ...subtitle, provider: { id: provider.id, name: provider.name } }
             subtitles.push(fullSub)
-            void hookReg.run('subtitle', { provider, subtitle: fullSub, id, timestamp: new Date().toISOString() })
+            notify('subtitle', { provider, subtitle: fullSub, id, timestamp: new Date().toISOString() })
         },
 
         /**
@@ -350,7 +365,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
 
             const finalErr = new OMSSProviderError(accumulatedError.message, { cause: accumulatedError })
 
-            void hookReg.run('error', { provider, error: finalErr, id, timestamp: new Date().toISOString() })
+            notify('error', { provider, error: finalErr, id, timestamp: new Date().toISOString() })
 
             return ERR(finalErr)
         },
@@ -369,7 +384,7 @@ export function createProviderResultEmitter(provider: Readonly<UnknownProvider>,
                 errors,
             }
 
-            void hookReg.run('done', { provider, result, id, timestamp: new Date().toISOString() })
+            notify('done', { provider, result, id, timestamp: new Date().toISOString() })
 
             return OK(result)
         },

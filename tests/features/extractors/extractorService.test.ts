@@ -131,6 +131,35 @@ describe('ExtractorService', () => {
         expect(result.ok).toBe(true)
     })
 
+    it('returns ERR and fires extractorRegisterFailed when registering the same extractor twice', async () => {
+        const registry = createExtractorRegistry()
+        const hooks = createHookRegistry<OMSSHooks>()
+        const service = createExtractorService(registry, hooks)
+
+        const after = vi.fn()
+        const failed = vi.fn()
+        hooks.add('afterRegisterExtractor', after)
+        hooks.add('extractorRegisterFailed', failed)
+
+        const extractor = createExtractor()
+
+        const first = await service.register(extractor)
+        expect(first.ok).toBe(true)
+
+        const second = await service.register(extractor)
+
+        expect(second.ok).toBe(false)
+        if (!second.ok) {
+            expect(second.error).toBeInstanceOf(OMSSExtractorError)
+            expect(second.error.message).toContain('already registered')
+        }
+
+        // afterRegisterExtractor must fire only for the real registration, not the duplicate.
+        expect(after).toHaveBeenCalledTimes(1)
+        expect(failed).toHaveBeenCalledTimes(1)
+        expect(registry.extractors).toHaveLength(1)
+    })
+
     it('runs failure hook when registry.add throws', async () => {
         const registry = createExtractorRegistry()
         const hooks = createHookRegistry<OMSSHooks>()
@@ -286,5 +315,29 @@ describe('ExtractorService', () => {
         if (!result.ok) {
             expect(result.error.message).toContain('No extractor found')
         }
+    })
+
+    it('skips an extractor whose matcher rejects and still finds a later match', async () => {
+        const broken = { matcher: vi.fn().mockRejectedValue(new Error('boom')), parse: vi.fn() }
+        const working = createExtractor(true)
+
+        registry.add(broken)
+        registry.add(working)
+
+        const result = await service.find('https://example.com')
+
+        expect(result.ok).toBe(true)
+        if (result.ok) expect(result.value).toBe(working)
+    })
+
+    it('returns an error (not a rejection) when every extractor matcher rejects', async () => {
+        const broken = { matcher: vi.fn().mockRejectedValue(new Error('boom')), parse: vi.fn() }
+
+        registry.add(broken)
+
+        const result = await service.find('https://example.com')
+
+        expect(result.ok).toBe(false)
+        if (!result.ok) expect(result.error).toBeInstanceOf(OMSSExtractorError)
     })
 })

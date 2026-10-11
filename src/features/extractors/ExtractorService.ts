@@ -71,9 +71,18 @@ export function createExtractorService(extractorRegistry: ExtractorRegistry, hoo
 
             const extractors = extractorRegistry.extractors
 
-            const matches = await Promise.all(extractors.map(async (extractor) => ({ extractor, result: await extractor.matcher(url) })))
+            // Promise.allSettled - a single extractor's matcher() rejecting must not
+            // abort the whole lookup; it's treated the same as a non-match so that
+            // later extractors still get a chance to match.
+            const settled = await Promise.allSettled(extractors.map(async (extractor) => ({ extractor, result: await extractor.matcher(url) })))
 
-            for (const { extractor, result } of matches) {
+            for (const outcome of settled) {
+                if (outcome.status !== 'fulfilled') {
+                    continue
+                }
+
+                const { extractor, result } = outcome.value
+
                 if (result.ok) {
                     await hookRegistry.run('afterFindExtractor', {
                         url,
@@ -107,6 +116,17 @@ export function createExtractorService(extractorRegistry: ExtractorRegistry, hoo
                 })
             } finally {
                 insideBeforeRegisterExtractor = false
+            }
+
+            if (extractorRegistry.has(extractor)) {
+                const error = new OMSSExtractorError('Extractor is already registered')
+
+                await hookRegistry.run('extractorRegisterFailed', {
+                    extractor,
+                    error,
+                })
+
+                return ERR(error)
             }
 
             try {

@@ -5,12 +5,13 @@ import { createOMSSServerConfig } from '../utils.js'
 
 describe('OMSSServer', () => {
     describe('constructor', () => {
-        it('initializes core services and stores immutable config', () => {
+        it('initializes core services and stores an equal, independent copy of config', () => {
             const config = createOMSSServerConfig()
 
             const server = new OMSSServer(config)
 
-            expect(server.config).toBe(config)
+            expect(server.config).toEqual(config)
+            expect(server.config).not.toBe(config)
             expect(Object.isFrozen(server.config)).toBe(false)
 
             expect(server.hooks).toBeDefined()
@@ -18,14 +19,24 @@ describe('OMSSServer', () => {
             expect(server.providers).toBeDefined()
             expect(server.sources).toBeDefined()
         })
+
+        it('is not affected by mutations to the original config object after construction', () => {
+            const config = createOMSSServerConfig({ name: 'original' })
+            const server = new OMSSServer(config)
+
+            config.name = 'mutated'
+
+            expect(server.config.name).toBe('original')
+        })
     })
 
     describe('config getter', () => {
-        it('returns the same config instance that was passed to the constructor', () => {
+        it('returns a config equal to, but independent of, the object passed to the constructor', () => {
             const config = createOMSSServerConfig({ name: 'another-server' })
             const server = new OMSSServer(config)
 
-            expect(server.config).toBe(config)
+            expect(server.config).toEqual(config)
+            expect(server.config).not.toBe(config)
         })
     })
 
@@ -63,6 +74,44 @@ describe('OMSSServer', () => {
                 expect(second.error).toBeInstanceOf(OMSSServerError)
                 expect(second.error.message).toContain('Decorator "existing" already exists')
                 expect(second.error.cause).toBeDefined()
+            }
+        })
+
+        it.each(['config', 'decorate', 'hasDecorator', 'getDecorator', 'hooks', 'plugins', 'providers', 'sources', 'extractors'])(
+            'refuses to shadow the framework member "%s", even though it is not an own property',
+            (name) => {
+                const server = new OMSSServer(createOMSSServerConfig())
+
+                // These live on the prototype (methods, the `config` getter) or were
+                // set as instance properties in the constructor - either way,
+                // Object.hasOwn alone would miss the prototype-based ones.
+                const result = server.decorate(name, 'shadowed')
+
+                expect(result.ok).toBe(false)
+                if (!result.ok) {
+                    expect(result.error).toBeInstanceOf(OMSSServerError)
+                    expect(result.error.message).toContain(`Decorator "${name}" already exists`)
+                }
+            }
+        )
+
+        it('refuses to shadow inherited Object.prototype members', () => {
+            const server = new OMSSServer(createOMSSServerConfig())
+
+            const result = server.decorate('toString', 'shadowed')
+
+            expect(result.ok).toBe(false)
+        })
+
+        it('rejects an empty decorator name', () => {
+            const server = new OMSSServer(createOMSSServerConfig())
+
+            const result = server.decorate('', 'value')
+
+            expect(result.ok).toBe(false)
+            if (!result.ok) {
+                expect(result.error).toBeInstanceOf(OMSSServerError)
+                expect(result.error.message).toContain('non-empty string')
             }
         })
 

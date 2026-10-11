@@ -204,6 +204,62 @@ describe('SourceCore.getSources', () => {
         if (!res.ok) expect(res.error).toBeInstanceOf(OMSSSourceGatheringError)
     })
 
+    it('does not run a disabled provider during source gathering', async () => {
+        const { core, registry, providerHookService, noopCleaner } = createSourceCore()
+
+        const resolver = createResolver({ value: 'meta' }, undefined, { namespace: 'tmdb' })
+        const enabledGetSources = vi.fn(async (_req: unknown, result: any) => {
+            result.source({ type: 'hls', url: 'https://enabled.com/s.m3u8', header: {}, streamable: true, quality: 'HD' })
+            return result.done()
+        })
+        const disabledGetSources = vi.fn(async (_req: unknown, result: any) => {
+            result.source({ type: 'hls', url: 'https://disabled.com/s.m3u8', header: {}, streamable: true, quality: 'HD' })
+            return result.done()
+        })
+
+        const enabledProvider = createProvider(resolver, enabledGetSources, { id: 'enabled-provider', enabled: true })
+        const disabledProvider = createProvider(resolver, disabledGetSources, { id: 'disabled-provider', enabled: false })
+
+        await registry.add(enabledProvider)
+        await registry.add(disabledProvider)
+
+        const result = await core.getSources('tmdb:12345', {}, providerHookService, noopCleaner)
+
+        expect(disabledGetSources).not.toHaveBeenCalled()
+        expect(enabledGetSources).toHaveBeenCalledTimes(1)
+        expect(result.ok).toBe(true)
+        if (result.ok) {
+            expect(result.value.sources).toHaveLength(1)
+            expect(result.value.sources[0]?.url).toBe('https://enabled.com/s.m3u8')
+        }
+    })
+
+    it('returns ERR "No providers found" when the only provider for the namespace is disabled', async () => {
+        const { core, registry, providerHookService, noopCleaner } = createSourceCore()
+
+        const resolver = createResolver({ value: 'meta' }, undefined, { namespace: 'tmdb' })
+        const provider = createProvider(resolver, undefined, { enabled: false })
+        await registry.add(provider)
+
+        const result = await core.getSources('tmdb:12345', {}, providerHookService, noopCleaner)
+
+        expect(result.ok).toBe(false)
+        if (!result.ok) expect(result.error.message).toContain('No providers found')
+    })
+
+    it('returns ERR "No providers found" when requesting a specific but disabled providerId', async () => {
+        const { core, registry, providerHookService, noopCleaner } = createSourceCore()
+
+        const resolver = createResolver({ value: 'meta' }, undefined, { namespace: 'tmdb' })
+        const provider = createProvider(resolver, undefined, { id: 'disabled-provider', enabled: false })
+        await registry.add(provider)
+
+        const result = await core.getSources('tmdb:12345', { providerId: 'disabled-provider' }, providerHookService, noopCleaner)
+
+        expect(result.ok).toBe(false)
+        if (!result.ok) expect(result.error.message).toContain('No providers found')
+    })
+
     it('returns ERR when abort signal is already aborted', async () => {
         const { core, registry, providerHookService, noopCleaner } = createSourceCore()
 

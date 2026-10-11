@@ -47,7 +47,9 @@ export function createExtractorRegistry(): ExtractorRegistry {
 
     return {
         get extractors() {
-            return extractors
+            // Defensive copy - the returned array is typed ReadonlyArray, so callers
+            // must not be able to mutate the registry's internal list through it.
+            return [...extractors]
         },
 
         reset() {

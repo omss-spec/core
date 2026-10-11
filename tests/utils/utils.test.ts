@@ -61,6 +61,7 @@ describe('validateSafeUniqueString', () => {
         assertOk('123')
         assertOk('abc-123')
         assertOk('a1-b2-c3')
+        assertOk('ns:val')
         assertOk('0-test-9')
     })
 
@@ -76,7 +77,6 @@ describe('validateSafeUniqueString', () => {
         assertErr('under_score')
         assertErr('dot.name')
         assertErr('slash/name')
-        assertErr('colon:name')
         assertErr('invalid!')
         assertErr('😀')
         assertErr('äbc')

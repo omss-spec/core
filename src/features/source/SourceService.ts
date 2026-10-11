@@ -11,6 +11,7 @@ import { createMiddlewareRunner } from '@/utils/MiddlewareRunner.js'
 import type { OMSSHooks, ProviderHooks } from '@/types/hooks.js'
 import { type ExtractorService } from '@/features/extractors/ExtractorService.js'
 import { createHookService } from '@/features/hooks/HookService.js'
+import { OK } from '@/utils/utils.js'
 
 /**
  * Public API for resolving sources for media.
@@ -114,7 +115,15 @@ export function createSourceService(omssServer: OMSSServer, providerRegistry: Pr
         // would silently never run.
         const canCoalesce = options.providerHookService === undefined && options.cleaningFunction === undefined
 
-        const result = canCoalesce ? await inFlight.run(getInFlightKey(omssId, options.providerId), runCore) : await runCore()
+        const sharedResult = canCoalesce ? await inFlight.run(getInFlightKey(omssId, options.providerId), runCore) : await runCore()
+
+        // Coalesced callers all resolve the same in-flight Promise, so give each
+        // caller its own copy of the aggregated arrays here - otherwise one caller
+        // sorting/mutating `sources`/`subtitles`/`errors` would corrupt what every
+        // other joined caller sees.
+        const result: Result<GatheredSources, OMSSSourceGatheringError> = sharedResult.ok
+            ? OK({ sources: [...sharedResult.value.sources], subtitles: [...sharedResult.value.subtitles], errors: [...sharedResult.value.errors] })
+            : sharedResult
 
         if (result.ok) {
             await hookRegistry.run('afterGetSources', {
