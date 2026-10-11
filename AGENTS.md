@@ -8,7 +8,7 @@ Read [README.md](README.md) for the architecture overview and [TERMINOLOGY.md](T
 
 ## Stack
 
-- TypeScript (strict), Node.js ≥20, ESM-first with dual CJS/ESM build via `tsdown`
+- TypeScript (strict), Node.js ≥22, ESM-first with dual CJS/ESM build via `tsdown`
 - Test runner: Vitest, package manager: npm (`package-lock.json` is the lockfile - don't introduce another one)
 - Zero production dependencies by design (see README) - think twice before adding one
 

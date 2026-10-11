@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createExtractorRegistry, type ExtractorRegistry } from '@/features/extractors/ExtractorRegistry.js'
+import { type Extractor } from '@/types/extractor.js'
 import { createExtractor } from '../../utils.js'
 
 describe('ExtractorRegistry', () => {
@@ -61,7 +62,8 @@ describe('ExtractorRegistry', () => {
 
         registry.add(extractor)
 
-        const snapshot = registry.extractors
+        // Typed readonly, so cast to prove that mutating the returned array is harmless at runtime too.
+        const snapshot = registry.extractors as Extractor[]
         snapshot.push(createExtractor())
         snapshot.length = 0
 

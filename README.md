@@ -43,7 +43,7 @@ The core is intentionally minimal. Its sole responsibility is to manage the OMSS
 - [Quick Start](#quick-start)
 - [Writing Providers & Resolvers](#writing-providers--resolvers)
 - [Features](#features)
-- [Documentation](#documentation-_coming-soon_)
+- [Documentation](#documentation)
 - [Ecosystem](#ecosystem)
 - [ID Convention](#id-convention)
 - [Contributing](#contributing)
@@ -71,18 +71,20 @@ pnpm add @omss/core
 
 ```ts
 import { OMSSServer } from '@omss/core'
-import httpPlugin from '@omss/plugin-http'
-import cachePlugin from '@omss/plugin-cache'
 
 const server = new OMSSServer({
     name: 'My Media Server',
 })
 
-await server.plugins.register(httpPlugin, {
-    port: 3000,
+// A plugin is an async function that receives the server and extends it.
+await server.plugins.register(async (server) => {
+    server.hooks.add('afterProviderRegister', ({ provider }) => {
+        console.log(`registered provider "${provider.id}"`)
+    })
 })
-// and many other features.
 ```
+
+Transport (HTTP), caching, and authentication are not part of the core - they are added as plugins. The official plugin packages are still planned, so see [Ecosystem](#ecosystem).
 
 Do you want to know more? Check out the [documentation](https://omss.mintlify.site) for a more in-depth guide.
 
@@ -141,9 +143,9 @@ See [example/example.ts](example/example.ts) for a full tour of every feature - 
 - **Developer friendly**: The framework is built to be very expressive and help developers in their daily use without sacrificing performance.
 - **Standards-compliant**: Built with the [OMSS Specification](https://github.com/omss-spec/omss-spec) in mind.
 
-## Documentation _(coming soon)_
+## Documentation
 
-The documentation is currently under development. You can find the latest version at [https://omss.mintlify.site](https://omss.mintlify.site).
+The documentation lives at [https://omss.mintlify.site](https://omss.mintlify.site).
 
 ## Ecosystem
 
@@ -201,7 +203,7 @@ However, the following namespaces are reserved for the OMSS specification and mu
 > [!NOTE]
 > Valid IMDb IDs consist of the prefix `tt` followed by exactly seven digits.
 
-A full list of supported namespaces and their values can be found in the [OMSS Specification](https://github.com/omss-spec/omss-spec) and the [docs](https://omss.mintlify.site) (coming soon).
+A full list of supported namespaces and their values can be found in the [OMSS Specification](https://github.com/omss-spec/omss-spec) and the [docs](https://omss.mintlify.site).
 
 ## Contributing
 

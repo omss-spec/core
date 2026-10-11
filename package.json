@@ -33,6 +33,7 @@
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "lint": "eslint .",
+        "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
         "lint:fix": "eslint . --fix",
         "dev": "tsdown --watch",
         "example": "tsdown -l silent && npm run example --workspace=example",

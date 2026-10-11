@@ -58,6 +58,10 @@ jobs:
               if: matrix.node-version == env.PRIMARY_NODE_VERSION
               run: npm run lint
 
+            - name: Typecheck (src and tests)
+              if: matrix.node-version == env.PRIMARY_NODE_VERSION
+              run: npm run typecheck
+
             - name: Format check
               if: matrix.node-version == env.PRIMARY_NODE_VERSION
               run: npm run format:check

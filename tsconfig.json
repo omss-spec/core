@@ -11,8 +11,6 @@
             "@/*": ["./src/*"]
         },
         "declaration": true,
-        "declarationMap": true,
-        "sourceMap": true,
         "strict": true,
         "noImplicitAny": true,
         "stripInternal": true,
